@@ -1,80 +1,104 @@
 %{
+
 #include <stdio.h>
-#define NUMBER 256
-#define IDENTIFIER 257
-#define ERROR 258
+#include <string.h>
 
-int linecount =0;
-int charcount =0;
-
+int linecount = 1;
+int charcount = 1;
 %}
 
+squote \'
+dquote \"
+stringlit {dquote}(.)+{dquote}
+charlit ({squote}(.){squote})+
+illegal  ^{dquote}$|^{number}$|^{squote}$|{space}
 letter [a-zA-Z]
 newline [ \n]
 carriage_return [ \r]
 horizontal_tab [ \t]
 vertical_tab [ \v]
 form_feed  [ \f]
-space      [' '];
+space   [' ']
 digit [0-9]
-number {digit}+(\.{digit}+)?(E[+-]?{digit}+)?
-whitespace [ {newline} |{ carriage_return} |{ horizontal_tab} |{ vertical_tab} |{ form_feed} |{ space} ]+
-id {letter}({letter}|{digits})* | '_'*}
-hex_digit {digit* |(A-F)* |(a-f)*}
+number (\+|\-)?{digit}+
+whitespace [" " \n\r\t\v\f]+ 
+id  {letter}({letter}|{digit}|\_)+
+hex_digit [ {digit* |(A-F)* |(a-f)*}]
 decimal_digit {digit}
-comment ["//"(.)*{newline}] 
+comment ((\/\/)(.)+{newline}) 
 
 
 %%
-bool { printf("T_BOOLTYPE"); }
-break { printf("T_BREAK");}
-continue { printf("T_CONTINUE");}
-class {printf("T_CLASS");}
-else  {printf("T_ELSE");}
-[.]   {charcount++;}
-{newline} {linecount++; charcount=0; }
-&& {printf("T_AND");}
-[=]  {printf("T_ASSIGN");}
-bool {printf("T_BOOLTYPE");}
-[\,] {printf("T_COMMA");}
-{comment} {printf("T_COMMENT");}
-[\/] {printf("T_DIV");}
-[\.] {printf("T_DOT");}
-[==]  {printf("T_EQ");}
-extends {printf("T_EXTENDS");}
-extern {printf("T_EXTERN");}
-false  {printf("T_FALSE");}
-for    {printf("T_FOR");}
-[>=]     {printf("T_GEQ");}
-[\>]    {printf("T_GT");}
-{id} {printf("T_ID");}
-if   {printf("T_IF");}
-{number}* {printf("T_INTCONSTANT");}
-int {printf("T_INTTYPE");}
-[\{] {printf("T_LCB");}
-[<<]  {printf("T_LEFTSHIFT");}
-[<=]  {printf("T_LEQ");}
-[\(]  {printf("T_LPAREN");}
-[\[] {printf("T_LSB");}
-[<] {printf("T_LT");}
-[-] {printf("T_MINUS");}
-[!=] {printf("T_NEQ");}
-new  {printf("T_NEW");}
-[!] {printf("T_NOT");} 
-null {printf("T_NULL");}
-[||] {printf("T_OR");}
-[+] {printf("T_PLUS");}
-[}] {printf("T_RCB");} 
-return {printf("T_RETURN");}
-[>>] {printf("T_RIGHTSHIFT");}
-[)] {printf("T_RPAREN");}
-[\]] {printf("T_RSB");}
-[;]  {printf("T_SEMICOLON");}
-string {printf("T_STRINGTYPE");}
-true {printf("T_TRUE");}
-void {printf("T_VOID");}
-while {printf("T_WHILE");}
-{whitespace}* {printf("T_WHITESPACE");}
+bool { printf("T_BOOLTYPE %s\n",yytext);charcount= charcount + strlen (yytext); return charcount; }
+break { printf("T_BREAK %s\n",yytext);charcount= charcount + strlen (yytext);}
+continue { printf("T_CONTINUE %s\n",yytext);charcount= charcount + strlen (yytext);}
+class {printf("T_CLASS %s\n",yytext);charcount= charcount + strlen (yytext);}
+else  {printf("T_ELSE %s\n",yytext);charcount= charcount + strlen (yytext);}
+\Z    {return 0;}
+extern {printf("T_EXTERN %s\n",yytext);}
+{newline} {linecount++;charcount=0;}
+
+"&&" {printf("T_AND %s\n",yytext);charcount= charcount + strlen (yytext);}
+"=" {printf("T_ASSIGN %s\n",yytext);charcount= charcount + strlen (yytext);}
+"," {printf("T_COMMA %s\n",yytext);charcount= charcount + strlen (yytext);}
+{comment} {printf("T_COMMENT %s\n",yytext);charcount= charcount + strlen (yytext);}
+"/" {printf("T_DIV %s\n",yytext);charcount= charcount + strlen (yytext);}
+"." {printf("T_DOT %s\n",yytext);charcount= charcount + strlen (yytext);}
+"=="  {printf("T_EQ %s\n",yytext);charcount= charcount + strlen (yytext);}
+extends {printf("T_EXTENDS %s\n",yytext);charcount= charcount + strlen (yytext);}
+extern {printf("T_EXTERN %s\n",yytext);charcount= charcount + strlen (yytext);}
+false  {printf("T_FALSE %s\n",yytext);charcount= charcount + strlen (yytext);}
+for    {printf("T_FOR %s\n",yytext);charcount= charcount + strlen (yytext);}
+">=" {printf("T_GEQ %s\n",yytext);charcount= charcount + strlen (yytext);}
+">" {printf("T_GT %s\n",yytext);charcount= charcount + strlen (yytext);}
+{id} {printf("T_ID %s\n",yytext); charcount= charcount + strlen (yytext);}
+{letter} {printf("T_ID %s\n" ,yytext);charcount= charcount + strlen (yytext);}
+if   {printf("T_IF %s\n",yytext);charcount= charcount + strlen (yytext);}
+{number} {printf("T_INTCONSANT %s\n",yytext);charcount= charcount + strlen (yytext);}
+int {printf("T_INTTYPE %s\n",yytext);charcount= charcount + strlen (yytext);}
+(\{) {printf("T_LCB %s\n",yytext);charcount= charcount + strlen (yytext);}
+"<<"  {printf("T_LEFTSHIFT %s\n",yytext);charcount= charcount + strlen (yytext);}
+"<="  {printf("T_LEQ %s\n",yytext);charcount= charcount + strlen (yytext);}
+
+"("  {printf("T_LPAREN %s\n",yytext);charcount= charcount + strlen (yytext);}
+"[" {printf("T_LSB %s\n",yytext);charcount= charcount + strlen (yytext);}
+
+"<" {printf("T_LT %s\n",yytext);charcount= charcount + strlen (yytext);}
+"-" {printf("T_MINUS %s\n",yytext);charcount= charcount + strlen (yytext);}
+"!=" {printf("T_NEQ %s\n",yytext);charcount= charcount + strlen (yytext);}
+new  {printf("T_NEW %s\n",yytext);charcount= charcount + strlen (yytext);}
+"!" {printf("T_NOT %s\n",yytext);charcount= charcount + strlen (yytext);} 
+null {printf("T_NULL %s\n",yytext);charcount= charcount + strlen (yytext);}
+"||" {printf("T_OR %s\n",yytext);charcount= charcount + strlen (yytext);}
+"+" {printf("T_PLUS %s\n",yytext);charcount= charcount + strlen (yytext);}
+"}"  {printf("T_RCB %s\n",yytext);charcount= charcount + strlen (yytext);} 
+return {printf("T_RETURN %s\n",yytext);return strlen (yytext);charcount= charcount + strlen (yytext); }
+">>" {printf("T_RIGHTSHIFT %s\n",yytext);charcount= charcount + strlen (yytext);}
+")" {printf("T_RPAREN %s\n",yytext);charcount= charcount + strlen (yytext);}
+"]" {printf("T_RSB %s\n",yytext);charcount= charcount + strlen (yytext);}
+";"  {printf("T_SEMICOLON %s\n",yytext);charcount= charcount + strlen (yytext);}
+string {printf("T_STRINGTYPE %s\n",yytext);charcount= charcount + strlen (yytext);}
+{stringlit} {printf("T_STRINGCONSTANT %s\n",yytext);charcount= charcount + strlen (yytext);}
+true {printf("T_TRUE %s\n",yytext);charcount= charcount + strlen (yytext);}
+void {printf("T_VOID %s\n",yytext);charcount= charcount + strlen (yytext);}
+while {printf("T_WHILE %s\n",yytext);charcount= charcount + strlen (yytext);}
+{whitespace} {printf("T_WHITESPACE '\n' \n ");}
+{charlit}  {printf("T_CHARCONSTANT %s\n",yytext);charcount= charcount + strlen (yytext);}
+(.) {printf("error in line  %d position %d \n",linecount,charcount= charcount + strlen(yytext));}
+
 %%
 
 
+
+int main (){
+int token;
+int position;
+while((token = yylex())){
+        position=position+token;
+	
+
+
+}
+printf("%d",position);
+        
+}
