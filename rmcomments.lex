@@ -8,7 +8,7 @@
 
 %%
 
-\/\*(.*)\*\/ {return CMT;}
+"/*"([^*]|\*+[^*/])*\*+"/" {return CMT;}
 \/\/.*	{return SINGLELINE;}
 
 %%
@@ -21,13 +21,13 @@ int main () {
     if(token == CMT){
 	int i;
 	for(i=0; i < yyleng; i++){
-	  printf("*");
+	  printf(" ");
 	}
 	
     }else if(token == SINGLELINE){
     	int i;
 	for(i=0; i < yyleng; i++){
-	  printf("-");
+	  printf(" ");
 	}
     }else{
 	printf("%s",yytext);
