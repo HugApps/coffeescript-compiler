@@ -8,7 +8,7 @@
 
 %%
 
-\/\*(.*)\*\/ {return CMT;}
+"/*"([^*]|\*+[^*/])*\*+"/" {return CMT;}
 \/\/.*	{return SINGLELINE;}
 
 %%
