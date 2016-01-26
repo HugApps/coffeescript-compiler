@@ -13,13 +13,23 @@ a*b+  {return T_C;}
 
 int main () {
 int token;
+int first = 1;
 while(token = yylex()){
+if(!first)
+{
+printf("\n");
+}
+else
+{
+first = 0;
+}
 switch(token){
-case T_A: printf("T_A: %s\n", yytext); break;
-case T_B: printf("T_B: %s\n", yytext);  break;
-case T_C: printf("T_C: %s\n", yytext);  break;
-default: printf("ERROR: %s\n", yytext);   break;
+case T_A: printf("T_A %s", yytext); break;
+case T_B: printf("T_B %s", yytext);  break;
+case T_C: printf("T_C %s", yytext);  break;
+default: printf("ERROR %s", yytext);   break;
  }
+
 }
 exit(0);
 }
