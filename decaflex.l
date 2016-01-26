@@ -41,21 +41,17 @@ else  {printf("T_ELSE %s\n",yytext);charcount= charcount + yyleng;}
 \Z    {return 0;}
 extern {printf("T_EXTERN %s\n",yytext);}
 
-^{newline}+ {linecount++;charcount=0;
+^{newline}+ {linecount=yyleng;charcount=0;
 	     
-            char test[yyleng+1];
-            printf("%d",yyleng);
-            char newc = '\n';
-            int a;
-             for(a = 0; a >yyleng-2 ;a++){
-		
-                test[a]= '\\';
-		test[a+1]= 'n';
-		
-		
-	    }
-            test[yyleng-1]='\0';
-            printf("T_WHITESPACE %s\n",test);}
+        int numNewLine = strlen(yytext);
+	printf("T_WHITESPACE ");
+	int i;
+	for(i = 0 ; i < numNewLine; ++i)
+	{
+		printf("\\n");
+	}
+	printf("\n");
+}
 
 	  
 
