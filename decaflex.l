@@ -122,7 +122,7 @@ while {printf("T_WHILE %s\n",yytext);charcount= charcount + yyleng;}
 ('') {printf("Empty char constant at line %i and position %i\n",linecount,charcount + yyleng); return ERROR;}
 
 {squote}..{squote} {printf("Invalid char constant length at line %i and position %i\n",linecount,charcount + yyleng);return ERROR;} 
-(.) {printf("ERROR at line%s \n",linecount, charcount + yyleng,yytext);return ERROR;}
+(.) {printf("ERROR at line %i position %i \n",linecount, charcount + yyleng);return ERROR;}
 %%
 
 
