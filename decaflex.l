@@ -25,7 +25,7 @@ escape_char \\([ftvnrab'"\\])
 space   [' ']
 digit [0-9]
 number (\+|\-)?{digit}+
-whitespace [ \n\r\t\v\f]
+whitespace [  ^\n\r\t\v\f]*
 id  {letter}({letter}|{digit}|\_)*
 hex_digit [ {digit* |(A-F)* |(a-f)*}]
 decimal_digit {digit}
@@ -34,7 +34,7 @@ comment ((\/\/)(.)+{newline})
 
 %%
 
-bool { printf("T_BOOLTYPE %s %d\n",yytext,charcount+yyleng);charcount= charcount + yyleng; }
+bool { printf("T_BOOLTYPE %s\n %d",yytext,charcount+yyleng);charcount= charcount + yyleng; }
 break { printf("T_BREAK %s\n",yytext);charcount= charcount + yyleng;}
 continue { printf("T_CONTINUE %s\n",yytext);charcount= charcount + yyleng;}
 class {printf("T_CLASS %s\n",yytext);charcount= charcount + yyleng;}
@@ -43,25 +43,29 @@ else  {printf("T_ELSE %s\n",yytext);charcount= charcount + yyleng;}
 
 extern {printf("T_EXTERN %s\n",yytext);}
 
-^{whitespace}+ {
+{whitespace}+ {
+               if(yytext[0]=='\n'){
+			
                         linecount=linecount+yyleng;charcount=0;
                         int numNewLine = strlen(yytext);
         
 			printf("T_WHITESPACE ");
 			int i;
-			for(i = 0 ; i < numNewLine; ++i){	
-				printf("\\n");
+			for(i = 0 ; i < numNewLine; ++i){
+			        
+                                if(yytext[i] == '\n'){		
+				printf("\\n");}
 	                }
-			printf("\n");
-			
+		        printf("\n");
                }
-
-{whitespace} {printf("T_WHITESPACE \\n\n");}
+	       else{printf("T_WHITESPACE %s\n",yytext);charcount= charcount + yyleng;}
+		
+               }
 
 "&&" {printf("T_AND %s\n",yytext);charcount= charcount + yyleng;}
 "=" {printf("T_ASSIGN %s\n",yytext);charcount= charcount + yyleng;}
-"," {printf("T_COMMA %s\\n\n",yytext);charcount= charcount + yyleng;}
-{comment} {printf("T_COMMENT %s\\n\n",yytext);charcount= charcount + yyleng;}
+"," {printf("T_COMMA %s\n",yytext);charcount= charcount + yyleng;}
+{comment} {printf("T_COMMENT %s\\n",yytext);charcount= charcount + yyleng;}
 "/" {printf("T_DIV %s\n",yytext);charcount= charcount + yyleng;}
 "." {printf("T_DOT %s\n",yytext);charcount= charcount + yyleng;}
 "=="  {printf("T_EQ %s\n",yytext);charcount= charcount + yyleng;}
@@ -126,7 +130,7 @@ int token;
 int position;
 int line=1;
 
-fflush(stdout);
+ 
  if(yylex() == ERROR){exit(1);}
  else{exit(0);}
         
