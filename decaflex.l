@@ -1,6 +1,7 @@
 %{
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #define ERROR 256
 int linecount = 1;
@@ -20,11 +21,11 @@ carriage_return [\r]
 horizontal_tab [\t]
 vertical_tab [\v]
 form_feed  [\f]
-escape_char \\[ftvnrab'"\\]
+escape_char \\([ftvnrab'"\\])
 space   [' ']
 digit [0-9]
 number (\+|\-)?{digit}+
-whitespace [ \r\t\v\f]+
+whitespace [ \n\r\t\v\f]
 id  {letter}({letter}|{digit}|\_)*
 hex_digit [ {digit* |(A-F)* |(a-f)*}]
 decimal_digit {digit}
@@ -39,30 +40,27 @@ continue { printf("T_CONTINUE %s\n",yytext);charcount= charcount + yyleng;}
 class {printf("T_CLASS %s\n",yytext);charcount= charcount + yyleng;}
 else  {printf("T_ELSE %s\n",yytext);charcount= charcount + yyleng;}
 \Z    {return 0;}
+
 extern {printf("T_EXTERN %s\n",yytext);}
 
-^{newline}+ {linecount=yyleng;charcount=0;
-	     
-        int numNewLine = strlen(yytext);
-	printf("T_WHITESPACE ");
-	int i;
-	for(i = 0 ; i < numNewLine; ++i)
-	{
-		printf("\\n");
-	}
-	printf("\n");
-}
+^{whitespace}+ {
+                        linecount=linecount+yyleng;charcount=0;
+                        int numNewLine = strlen(yytext);
+        
+			printf("T_WHITESPACE ");
+			int i;
+			for(i = 0 ; i < numNewLine; ++i){	
+				printf("\\n");
+	                }
+			printf("\n");
+			
+               }
 
-	  
-
-
-
-{newline} {linecount++;charcount=0;printf("T_WHITESPACE \\n\n");}
-
+{whitespace} {printf("T_WHITESPACE \\n\n");}
 
 "&&" {printf("T_AND %s\n",yytext);charcount= charcount + yyleng;}
 "=" {printf("T_ASSIGN %s\n",yytext);charcount= charcount + yyleng;}
-"," {printf("T_COMMA %s\n",yytext);charcount= charcount + yyleng;}
+"," {printf("T_COMMA %s\\n\n",yytext);charcount= charcount + yyleng;}
 {comment} {printf("T_COMMENT %s\\n\n",yytext);charcount= charcount + yyleng;}
 "/" {printf("T_DIV %s\n",yytext);charcount= charcount + yyleng;}
 "." {printf("T_DOT %s\n",yytext);charcount= charcount + yyleng;}
@@ -111,14 +109,14 @@ while {printf("T_WHILE %s\n",yytext);charcount= charcount + yyleng;}
 
 {stringlit} {printf("T_STRINGCONSTANT %s\n",yytext);charcount= charcount + yyleng;}
 
-{whitespace} {printf("T_WHITESPACE %s\n",yytext);}
+
 ({charlit})|({charwithescape}) {printf("T_CHARCONSTANT %s\n",yytext);charcount= charcount + yyleng;}
  
 
-('') {printf("Empty char constant at line %i and position %i\n",linecount,charcount + yyleng); return ERROR;}
+('') {fprintf(stdout,"Empty char constant at line %i and position %i\n",linecount,charcount + yyleng); return ERROR;}
 
 {squote}..{squote} {printf("Invalid char constant length at line %i and position %i\n",linecount,charcount + yyleng);return ERROR;} 
-(.) {printf("ERROR at line %i position %i \n",linecount, charcount + yyleng);return ERROR;}
+(.) {fprintf(stdout,"ERROR at line %i position %i \n",linecount, charcount + yyleng);return ERROR;}
 %%
 
 
@@ -128,7 +126,7 @@ int token;
 int position;
 int line=1;
 
-
+fflush(stdout);
  if(yylex() == ERROR){exit(1);}
  else{exit(0);}
         
