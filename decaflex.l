@@ -20,7 +20,7 @@ carriage_return [\r]
 horizontal_tab [\t]
 vertical_tab [\v]
 form_feed  [\f]
-escape_char \\[ftvnrab{squote}{dquote}]
+escape_char \\[ftvnrab'"\\]
 space   [' ']
 digit [0-9]
 number (\+|\-)?{digit}+
@@ -116,7 +116,7 @@ while {printf("T_WHILE %s\n",yytext);charcount= charcount + yyleng;}
 {stringlit} {printf("T_STRINGCONSTANT %s\n",yytext);charcount= charcount + yyleng;}
 
 {whitespace} {printf("T_WHITESPACE %s\n",yytext);}
-{charlit} {printf("T_CHARCONSTANT %s\n",yytext);charcount= charcount + yyleng;}
+({charlit})|({charwithescape}) {printf("T_CHARCONSTANT %s\n",yytext);charcount= charcount + yyleng;}
  
 
 ('') {printf("Empty char constant at line %i and position %i\n",linecount,charcount + yyleng); return ERROR;}
