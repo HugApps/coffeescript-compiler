@@ -11,7 +11,7 @@ int charcount = 0;
 squote \'
 dquote \"
 
-stringlit ({dquote}(.*)+{dquote})
+stringlit {dquote}(.*)+{dquote}
 charlit ({squote}(.){squote})+
 charwithescape {squote}{escape_char}{squote}
 illegal  ^{dquote}$|^{number}$|^{squote}$
@@ -115,7 +115,7 @@ while {printf("T_WHILE %s\n",yytext);charcount= charcount + yyleng;}
 
 ('') {fprintf(stdout,"Empty char constant at line %i and position %i\n",linecount,charcount + yyleng); return ERROR;}
 
-{squote}..{squote} {printf("Invalid char constant length at line %i and position %i\n",linecount,charcount + yyleng);return ERROR;} 
+{squote}..{squote} {fprintf(stderr,"Invalid char constant length at line %i and position %i\n",linecount,charcount + yyleng);return ERROR;} 
 (.) {fprintf(stdout,"ERROR at line %i position %i \n",linecount, charcount + yyleng);return ERROR;}
 %%
 
