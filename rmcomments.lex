@@ -2,15 +2,15 @@
 #include <stdio.h>
 #define SINGLELINE 262
 #define CMT 263
-#define STR 264
+#define STRING 264
 
 %}
 
 %%
 
-\/\*((\n+)|\*+[^*/])*\*+\/ {return CMT;}
+\/\*([^.*]|\*+[^*/])*\*+\/ {return CMT;}
 \/\/.*	{return SINGLELINE;}
-\"(.)*\" {return STR;}
+\"(.)*\" {return STRING;}
 
 %%
 
@@ -19,22 +19,22 @@ int main () {
   start = 0; 
   
   while ((token = yylex())) {
-  	if(token == STR){
-  		print(yytext);
+  	if(token == STRING){
+  		printf("%s",yytext);
   	}else if(token == CMT){
-		int i;
-		for(i=0; i < yyleng; i++){
-		  printf("*");
-		  }
-
+	int i;
+	for(i=0; i < yyleng; i++){
+	  printf(" ");
+	}
+	
     }else if(token == SINGLELINE){
     	int i;
-		for(i=0; i < yyleng; i++){
-		  printf(" ");
-		}
+	for(i=0; i < yyleng; i++){
+	  printf(" ");
+	}
     }else{
 	printf("%s",yytext);
-    }
+     }
 }
   exit(0);
 }
