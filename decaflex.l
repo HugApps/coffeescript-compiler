@@ -11,9 +11,12 @@ int charcount = 0;
 squote \'
 dquote \"
 
-stringlit {dquote}(.*)+{dquote}
+stringlit {dquote}.*{dquote}
+stringescape {dquote}(escape_char){dquote}
+
 charlit ({squote}(.){squote})+
 charwithescape {squote}{escape_char}{squote}
+
 illegal  ^{dquote}$|^{number}$|^{squote}$
 letter [a-zA-Z]
 newline [\n]
@@ -61,7 +64,7 @@ printf("\n");
 "&&" {printf("T_AND %s\n",yytext);charcount= charcount + yyleng;}
 "=" {printf("T_ASSIGN %s\n",yytext);charcount= charcount + yyleng;}
 "," {printf("T_COMMA %s\n",yytext);charcount= charcount + yyleng;}
-{comment} {printf("T_COMMENT %s\\n",yytext);charcount= charcount + yyleng;}
+{comment} {printf("T_COMMENT %s\n",yytext);charcount= charcount + yyleng;}
 "/" {printf("T_DIV %s\n",yytext);charcount= charcount + yyleng;}
 "." {printf("T_DOT %s\n",yytext);charcount= charcount + yyleng;}
 "=="  {printf("T_EQ %s\n",yytext);charcount= charcount + yyleng;}
@@ -80,7 +83,7 @@ new  {printf("T_NEW %s\n",yytext);charcount= charcount + yyleng;}
 null {printf("T_NULL %s\n",yytext);charcount= charcount + yyleng;}
 string {printf("T_STRINGTYPE %s\n",yytext);charcount= charcount + yyleng;}
 true {printf("T_TRUE %s\n",yytext);charcount= charcount + yyleng;}
-{number} {printf("T_INTCONTSANT %s\n",yytext);charcount= charcount + yyleng;}
+{number} {printf("T_INTCONSTANT %s\n",yytext);charcount= charcount + yyleng;}
 void {printf("T_VOID %s\n",yytext);charcount= charcount + yyleng;}
 while {printf("T_WHILE %s\n",yytext);charcount= charcount + yyleng;}
 {id} {printf("T_ID %s\n",yytext); charcount= charcount + yyleng;}
@@ -107,16 +110,19 @@ while {printf("T_WHILE %s\n",yytext);charcount= charcount + yyleng;}
 "]" {printf("T_RSB %s\n",yytext);charcount= charcount + yyleng;}
 ";"  {printf("T_SEMICOLON %s\n",yytext);charcount= charcount + yyleng;}
 
+{stringescape} {printf("T_STRINGCONSTANT %s\n",yytext);charcount= charcount + yyleng;}
+
+{dquote}\\[^nbtrvab'"\\]{dquote} {fprintf(stderr,"ERROR: Invalid escape character in string constant");return ERROR;}
 {stringlit} {printf("T_STRINGCONSTANT %s\n",yytext);charcount= charcount + yyleng;}
 
 
 ({charlit})|({charwithescape}) {printf("T_CHARCONSTANT %s\n",yytext);charcount= charcount + yyleng;}
  
 
-('') {fprintf(stdout,"Empty char constant at line %i and position %i\n",linecount,charcount + yyleng); return ERROR;}
+('') {fprintf(stderr,"Empty char constant at line %i and position %i\n",linecount,charcount + yyleng); return ERROR;}
 
 {squote}..{squote} {fprintf(stderr,"Invalid char constant length at line %i and position %i\n",linecount,charcount + yyleng);return ERROR;} 
-(.) {fprintf(stdout,"ERROR at line %i position %i \n",linecount, charcount + yyleng);return ERROR;}
+(.) {fprintf(stderr,"ERROR at line %i position %i \n",linecount, charcount + yyleng);return ERROR;}
 %%
 
 
@@ -135,5 +141,5 @@ int line=1;
 
 }
 
-        
+	        
 
