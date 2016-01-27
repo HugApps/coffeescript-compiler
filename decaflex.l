@@ -32,7 +32,7 @@ whitespace [ ^\n\r\t\v\f]*
 id  {letter}({letter}|{digit}|\_)*
 hex_digit [ {digit* |(A-F)* |(a-f)*}]
 decimal_digit {digit}
-comment ((\/\/)(.)+{newline}) 
+comment ((\/\/)(.)+\n) 
 
 
 %%
@@ -64,7 +64,13 @@ printf("\n");
 "&&" {printf("T_AND %s\n",yytext);charcount= charcount + yyleng;}
 "=" {printf("T_ASSIGN %s\n",yytext);charcount= charcount + yyleng;}
 "," {printf("T_COMMA %s\n",yytext);charcount= charcount + yyleng;}
-{comment} {printf("T_COMMENT %s\n",yytext);charcount= charcount + yyleng;}
+{comment} {printf("T_COMMENT ");charcount= charcount + yyleng;linecount++;
+  	int x;
+	for(x=0;x< strlen(yytext)-1;x++){
+		printf("%c",yytext[x]);
+	}
+	printf("\\n\n");
+}
 "/" {printf("T_DIV %s\n",yytext);charcount= charcount + yyleng;}
 "." {printf("T_DOT %s\n",yytext);charcount= charcount + yyleng;}
 "=="  {printf("T_EQ %s\n",yytext);charcount= charcount + yyleng;}
@@ -110,12 +116,16 @@ while {printf("T_WHILE %s\n",yytext);charcount= charcount + yyleng;}
 "]" {printf("T_RSB %s\n",yytext);charcount= charcount + yyleng;}
 ";"  {printf("T_SEMICOLON %s\n",yytext);charcount= charcount + yyleng;}
 
+
 {stringescape} {printf("T_STRINGCONSTANT %s\n",yytext);charcount= charcount + yyleng;}
 
 {dquote}\\[^nbtrvab'"\\]{dquote} {fprintf(stderr,"ERROR: Invalid escape character in string constant");return ERROR;}
+{dquote}\\{dquote} {fprintf(stderr,"ERROR: Invalid escape character in string constant");return ERROR;}
+
+
 {stringlit} {printf("T_STRINGCONSTANT %s\n",yytext);charcount= charcount + yyleng;}
 
-
+{squote}\\{squote} {fprintf(stderr,"ERROR: Invalid escape in char constant");return ERROR;}
 ({charlit})|({charwithescape}) {printf("T_CHARCONSTANT %s\n",yytext);charcount= charcount + yyleng;}
  
 
