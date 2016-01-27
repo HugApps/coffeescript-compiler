@@ -25,7 +25,7 @@ escape_char \\([ftvnrab'"\\])
 space   [' ']
 digit [0-9]
 number (\+|\-)?{digit}+
-whitespace [  ^\n\r\t\v\f]*
+whitespace [ ^\n\r\t\v\f]*
 id  {letter}({letter}|{digit}|\_)*
 hex_digit [ {digit* |(A-F)* |(a-f)*}]
 decimal_digit {digit}
@@ -44,23 +44,19 @@ else  {printf("T_ELSE %s\n",yytext);charcount= charcount + yyleng;}
 extern {printf("T_EXTERN %s\n",yytext);}
 
 {whitespace}+ {
-               if(yytext[0]=='\n'){
-			
-                        linecount=linecount+yyleng;charcount=0;
-                        int numNewLine = strlen(yytext);
-        
-			printf("T_WHITESPACE ");
-			int i;
-			for(i = 0 ; i < numNewLine; ++i){
-			        
-                                if(yytext[i] == '\n'){		
-				printf("\\n");}
-	                }
-		        printf("\n");
-               }
-	       else{printf("T_WHITESPACE %s\n",yytext);charcount= charcount + yyleng;}
-		
-               }
+    int i ;
+    printf("T_WHITESPACE ");
+            for(i = 0;i<yyleng;i++) {
+		if(yytext[i] == '\n') {
+		printf("\\n");
+}else {
+	printf("%c",yytext[i]);
+}
+
+}
+printf("\n");
+	
+   }
 
 "&&" {printf("T_AND %s\n",yytext);charcount= charcount + yyleng;}
 "=" {printf("T_ASSIGN %s\n",yytext);charcount= charcount + yyleng;}
