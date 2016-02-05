@@ -10,19 +10,29 @@ bool issym[26];
   int lvalue; /* index into symtbl for variable name */
 }
 
-%token <rvalue> NUMBER
-%token <lvalue> NAME 
+%token <rvalue> INTEGER 
+%token <lvalue> VARIABLE 
+%token NEWLINE
 
 %type <rvalue> expression
 
+%left '-' '+' '=' 
+
 %%
-statement: NAME '=' expression { symtbl[$1] = $3; issym[$1] = true; }
-         | expression  { printf("%d\n", $1); }
+
+statements: statement| statement NEWLINE | statements statement NEWLINE |  statement statements  ;
+
+
+statement: expression  { printf("%d\n", $1); }
+         | VARIABLE '=' expression { symtbl[$1] = $3; issym[$1] = true; }
          ;
 
-expression: expression '+' NUMBER { $$ = $1 + $3; }
-         | expression '-' NUMBER { $$ = $1 - $3; }
-         | NUMBER { $$ = $1; }
+expression: INTEGER 
+	 | VARIABLE                 { $$ = symtbl[$1]; }
+	 | expression '+' INTEGER   { $$ = $1 + $3; }
+         | expression '-' INTEGER   { $$ = $1 - $3; } 
+	 | expression '+' VARIABLE   { $$ = $1 + symtbl[$3] ;}
+         | expression '-' VARIABLE   { $$ = $1 - symtbl[$3]; }
          ;
 %%
 
