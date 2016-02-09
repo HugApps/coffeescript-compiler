@@ -1,0 +1,40 @@
+class quicksort {
+
+int list[100];
+
+void initList(){
+
+	int i;
+	for (i=0; i < 100; i=i+1){
+		list[i] = (i * 2382983) % 100;
+	}
+}
+
+void partition (int a[] , int start , int end){
+	if (start > end){return null;}
+	int low = start;
+	int high = end;
+        int pivot = a[mid];
+	while(low < mid && mid < high){
+
+	  	while( a[low] < pivot){
+			low++;}
+
+		while(a[high] > pivot){
+			high--;}
+	int temp = a[low];
+	a[low]=a[high];
+	a[high]=temp;
+
+	}
+	}
+
+void quicksort (int a[],int start,int end ){
+	if(start => end){
+		return null;}
+
+
+	int mid = (start+end)/2
+	
+		while (start < mid && end>mid){
+	
