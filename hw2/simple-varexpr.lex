@@ -14,3 +14,6 @@ log   { return T_LOG;  }
 [a-z]      { yylval.rvalue=yytext[0]-'a' ; return T_NAME; }
 .     return yytext[0];
 %%
+
+
+

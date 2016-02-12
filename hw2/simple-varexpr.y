@@ -40,7 +40,7 @@ expression:  expression '+' T_NUMBER   { $$ = $1 + $3; IsDouble= 0; }
            | '(' expression ')'  { $$ = $2 ; IsDouble = IsExpressionDouble;}  
            | T_EXP '(' expression ')'  { $$ = exp($3);}
            | T_SQRT '(' expression ')' { $$ = sqrt($3);}
-           | T_LOG '(' expression ')'  { $$ = log($3);
+           | T_LOG '(' expression ')'  { $$ = log($3);}
    ;
 %%
 
