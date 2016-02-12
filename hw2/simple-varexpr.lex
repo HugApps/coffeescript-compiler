@@ -1,12 +1,16 @@
 %{
 #include "simple-varexpr.tab.h"
-#include <math.h>
+#include <math.h> 
 %}
 
 %%
-[0-9]+    { yylval.rvalue = atoi(yytext); return INTEGER; } /* convert NUMBER token value to integer */
-\n        { return NEWLINE;}
-[ \t\n]   ;  /* ignore whitespace */
-[a-z]     { yylval.lvalue = yytext[0] - 'a'; return VARIABLE; } /* convert NAME token into index */
-.  return yytext[0];
+[0-9]+ { yylval.dvalue = atoi(yytext); return T_NUMBER; } 
+(([0-9]+(\.[0-9]*)?)|([0-9]*\.[0-9]+)) { yylval.dvalue = atoi(yytext); return T_DOUBLE; } 
+[ \t\n]     /* ignore whitespace */    
+\n         { return *yytext; }
+exp   { return T_EXP; }
+sqrt  { return T_SQRT; }
+log   { return T_LOG;  } 
+[a-z]      { yylval.rvalue=yytext[0]-'a' ; return T_NAME; }
+.     return yytext[0];
 %%

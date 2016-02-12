@@ -1,38 +1,47 @@
 %{
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
-int symtbl[26];
-bool issym[26];
+#include <math.h>
+#define Index 100
+double  symb[Index];
+int  IsSymbDouble[Index];
+int  IsDouble =0;
+int  IsExpressionDouble=0;
 %}
 
-%union {
-  int rvalue; /* value of evaluated expression */
-  int lvalue; /* index into symtbl for variable name */
-}
+%union { int  rvalue; double  dvalue; }
 
-%token <rvalue> INTEGER 
-%token <lvalue> VARIABLE 
-%token NEWLINE
+%token <dvalue> T_NUMBER
+%token <dvalue> T_DOUBLE
+%token <rvalue> T_NAME 
+%token T_SQRT T_EXP
 
-%type <rvalue> expression
-
-%left '-' '+' '=' 
+%type <dvalue> expression
+%left '+' '-' T_LOG
+%right '='
 
 %%
+statement_list: statement | statement '\n' | statement '\n' statement_list | statement_list statement ;
 
-statements: statement| statement NEWLINE | statements statement NEWLINE |  statement statements  ;
+statement: expression {printf("%g\n", $1); IsExpressionDouble = 0 ;}
+         |T_NAME '='  expression{ symb[$1]=$3; IsSymbDouble[$1]=IsExpressionDouble;  }
+        ;
 
-
-statement: expression  { printf("%d\n", $1); }
-         | VARIABLE '=' expression { symtbl[$1] = $3; issym[$1] = true; }
-         ;
-
-expression: INTEGER 
-	 | VARIABLE                 { $$ = symtbl[$1]; }
-	 | expression '+' INTEGER   { $$ = $1 + $3; }
-         | expression '-' INTEGER   { $$ = $1 - $3; } 
-	 | expression '+' VARIABLE   { $$ = $1 + symtbl[$3] ;}
-         | expression '-' VARIABLE   { $$ = $1 - symtbl[$3]; }
-         ;
+expression:  expression '+' T_NUMBER   { $$ = $1 + $3; IsDouble= 0; }
+	   | expression '-' T_NUMBER   { $$ = $1 - $3; IsDouble= 0; }
+	   | expression '+' T_DOUBLE   { $$ = $1 + $3; IsDouble= 1; }
+	   | expression '-' T_DOUBLE   { $$ = $1 - $3; IsDouble= 1; }
+           | T_NAME   { $$ = symb[$1]; IsDouble =IsSymbDouble[$1]; }
+           | T_NUMBER  { $$ = $1; IsDouble= 0; }
+           | T_DOUBLE  { $$ = $1; IsDouble= 1; }
+           | '(' expression ')'  { $$ = $2 ; IsDouble = IsExpressionDouble;}  
+           | T_EXP '(' expression ')'  { $$ = exp($3);}
+           | T_SQRT '(' expression ')' { $$ = sqrt($3);}
+           | T_LOG '(' expression ')'  { $$ = log($3);}
+   ;
 %%
+
+
+
 
