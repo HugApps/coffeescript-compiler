@@ -37,102 +37,103 @@ comment ((\/\/)(.)+\n)
 
 %%
 
-bool { printf("T_BOOLTYPE %s\n %d",yytext,charcount+yyleng);charcount= charcount + yyleng; }
-break { printf("T_BREAK %s\n",yytext);charcount= charcount + yyleng;}
-continue { printf("T_CONTINUE %s\n",yytext);charcount= charcount + yyleng;}
-class {printf("T_CLASS %s\n",yytext);charcount= charcount + yyleng;}
-else  {printf("T_ELSE %s\n",yytext);charcount= charcount + yyleng;}
-\Z    {return 0;}
+bool 		{ printf("T_BOOLTYPE %s\n %d",yytext,charcount+yyleng);charcount= charcount + yyleng; return T_BOOLTYPE; }
+break 		{ printf("T_BREAK %s\n",yytext);charcount= charcount + yyleng;  return T_BREAK; }
+continue 	{ printf("T_CONTINUE %s\n",yytext);charcount= charcount + yyleng; return T_CONTINUE; }
+class 		{ printf("T_CLASS %s\n",yytext);charcount= charcount + yyleng; return T_CLASS;}
+else  		{ printf("T_ELSE %s\n",yytext);charcount= charcount + yyleng; return T_ELSE; }
+\Z    		;
 
-extern {printf("T_EXTERN %s\n",yytext);}
+extern 		{ printf("T_EXTERN %s\n",yytext); return T_EXTERN; }
 
 {whitespace}+ {
     int i ;
     printf("T_WHITESPACE ");
-            for(i = 0;i<yyleng;i++) {
+	for(i = 0;i<yyleng;i++) {
 		if(yytext[i] == '\n') {
-		printf("\\n");
-}else {
-	printf("%c",yytext[i]);
-}
-
-}
-printf("\n");
-	
+			printf("\\n");
+		}else {
+			printf("%c",yytext[i]);
+		}
+	}
+	printf("\n");	
    }
 
-"&&" {printf("T_AND %s\n",yytext);charcount= charcount + yyleng;}
-"=" {printf("T_ASSIGN %s\n",yytext);charcount= charcount + yyleng;}
-"," {printf("T_COMMA %s\n",yytext);charcount= charcount + yyleng;}
-{comment} {printf("T_COMMENT ");charcount= charcount + yyleng;linecount++;
+"&&" 		{printf("T_AND %s\n",yytext);charcount= charcount + yyleng; return T_AND; }
+"=" 		{printf("T_ASSIGN %s\n",yytext);charcount= charcount + yyleng; return T_ASSIGN; }
+"," 		{printf("T_COMMA %s\n",yytext);charcount= charcount + yyleng; return T_COMMA; }
+{comment} 	{printf("T_COMMENT ");charcount= charcount + yyleng;linecount++;
   	int x;
 	for(x=0;x< strlen(yytext)-1;x++){
 		printf("%c",yytext[x]);
 	}
 	printf("\\n\n");
 }
-"/" {printf("T_DIV %s\n",yytext);charcount= charcount + yyleng;}
-"." {printf("T_DOT %s\n",yytext);charcount= charcount + yyleng;}
-"=="  {printf("T_EQ %s\n",yytext);charcount= charcount + yyleng;}
-extends {printf("T_EXTENDS %s\n",yytext);charcount= charcount + yyleng;}
-extern {printf("T_EXTERN %s\n",yytext);charcount= charcount +yyleng;}
-false  {printf("T_FALSE %s\n",yytext);charcount= charcount + yyleng;}
-for    {printf("T_FOR %s\n",yytext);charcount= charcount + yyleng;}
-int {printf("T_INTTYPE %s\n",yytext);charcount= charcount + yyleng;}
-"\*" {printf("T_MULT %s\n", yytext);charcount= charcount + yyleng;}
-"%"  {printf("T_MOD %s\n", yytext); charcount =charcount + yyleng;}
-">=" {printf("T_GEQ %s\n",yytext);charcount= charcount + yyleng;}
-">" {printf("T_GT %s\n",yytext);charcount= charcount + yyleng;}
-return {printf("T_RETURN %s\n",yytext);charcount= charcount + yyleng; }
-if   {printf("T_IF %s\n",yytext);charcount= charcount + yyleng;}
-new  {printf("T_NEW %s\n",yytext);charcount= charcount + yyleng;}
-null {printf("T_NULL %s\n",yytext);charcount= charcount + yyleng;}
-string {printf("T_STRINGTYPE %s\n",yytext);charcount= charcount + yyleng;}
-true {printf("T_TRUE %s\n",yytext);charcount= charcount + yyleng;}
-{number} {printf("T_INTCONSTANT %s\n",yytext);charcount= charcount + yyleng;}
-void {printf("T_VOID %s\n",yytext);charcount= charcount + yyleng;}
-while {printf("T_WHILE %s\n",yytext);charcount= charcount + yyleng;}
-{id} {printf("T_ID %s\n",yytext); charcount= charcount + yyleng;}
 
-(\{) {printf("T_LCB %s\n",yytext);charcount= charcount + yyleng;}
-"<<"  {printf("T_LEFTSHIFT %s\n",yytext);charcount= charcount + yyleng;}
-"<="  {printf("T_LEQ %s\n",yytext);charcount= charcount + yyleng;}
+"/" 		{printf("T_DIV %s\n",yytext);charcount= charcount + yyleng; 	return T_DIV; }
+"." 		{printf("T_DOT %s\n",yytext);charcount= charcount + yyleng; 	return T_DOT; }
+"=="  		{printf("T_EQ %s\n",yytext);charcount= charcount + yyleng; 	return T_EQ; }
+extends 	{printf("T_EXTENDS %s\n",yytext);charcount= charcount + yyleng; return T_EXTENDS; }
+extern 		{printf("T_EXTERN %s\n",yytext);charcount= charcount +yyleng; 	return T_EXTERN; }
+false  		{printf("T_FALSE %s\n",yytext);charcount= charcount + yyleng; 	return T_FALSE; }
+for    		{printf("T_FOR %s\n",yytext);charcount= charcount + yyleng; 	return T_FOR; }
+int 		{printf("T_INTTYPE %s\n",yytext);charcount= charcount + yyleng; return T_INTTYPE; }
+"\*" 		{printf("T_MULT %s\n", yytext);charcount= charcount + yyleng; 	return T_MULT; }
+"%"  		{printf("T_MOD %s\n", yytext); charcount =charcount + yyleng; 	return T_MOD; }
+">=" 		{printf("T_GEQ %s\n",yytext);charcount= charcount + yyleng; 	return T_GEQ; }
+">" 		{printf("T_GT %s\n",yytext);charcount= charcount + yyleng; 	return T_GT; }
+return 		{printf("T_RETURN %s\n",yytext);charcount= charcount + yyleng; 	return T_RETURN; }
+if   		{printf("T_IF %s\n",yytext);charcount= charcount + yyleng; 	return T_IF; }
+new  		{printf("T_NEW %s\n",yytext);charcount= charcount + yyleng; 	return T_NEW; }
+null 		{printf("T_NULL %s\n",yytext);charcount= charcount + yyleng; 	return T_NULL; }
+string 		{printf("T_STRINGTYPE %s\n",yytext);charcount= charcount + yyleng; return T_STRINGTYPE; }
+true 		{printf("T_TRUE %s\n",yytext);charcount= charcount + yyleng;	return T_TRUE; }
+{number} 	{printf("T_INTCONSTANT %s\n",yytext);charcount= charcount + yyleng; 
+		yylval.rvalue = atoi(yytext); return T_INTCONSTANT; }
+void 		{printf("T_VOID %s\n",yytext);charcount= charcount + yyleng;	return T_VOID; }
+while 		{printf("T_WHILE %s\n",yytext);charcount= charcount + yyleng; 	return T_WHILE; }
+{id} 		{printf("T_ID %s\n",yytext); charcount= charcount + yyleng;	
+		yylval.lvalue = yytext[0] - 'a'; return T_ID; }
 
-"("  {printf("T_LPAREN %s\n",yytext);charcount= charcount + yyleng;}
-"[" {printf("T_LSB %s\n",yytext);charcount= charcount + yyleng;}
+(\{) 		{printf("T_LCB %s\n",yytext);charcount= charcount + yyleng;	return T_LCB; }
+"<<"  		{printf("T_LEFTSHIFT %s\n",yytext);charcount= charcount + yyleng; return T_LEFTSHIFT; }
+"<="  		{printf("T_LEQ %s\n",yytext);charcount= charcount + yyleng;	return T_LEQ; }
 
-"<" {printf("T_LT %s\n",yytext);charcount= charcount + yyleng;}
-"-" {printf("T_MINUS %s\n",yytext);charcount= charcount + yyleng;}
-"!=" {printf("T_NEQ %s\n",yytext);charcount= charcount + yyleng;}
+"("  		{printf("T_LPAREN %s\n",yytext);charcount= charcount + yyleng;	return T_LPAREN; }
+"[" 		{printf("T_LSB %s\n",yytext);charcount= charcount + yyleng;	return T_LSB; }
 
-"!" {printf("T_NOT %s\n",yytext);charcount= charcount + yyleng;} 
+"<" 		{printf("T_LT %s\n",yytext);charcount= charcount + yyleng;	return T_LT; }
+"-" 		{printf("T_MINUS %s\n",yytext);charcount= charcount + yyleng;	return T_MINUS; }
+"!=" 		{printf("T_NEQ %s\n",yytext);charcount= charcount + yyleng;	return T_NEQ; }
 
-"||" {printf("T_OR %s\n",yytext);charcount= charcount + yyleng;}
-"+" {printf("T_PLUS %s\n",yytext);charcount= charcount + yyleng;}
-"}"  {printf("T_RCB %s\n",yytext);charcount= charcount + yyleng;} 
+"!" 		{printf("T_NOT %s\n",yytext);charcount= charcount + yyleng;	return T_NOT; } 
 
-">>" {printf("T_RIGHTSHIFT %s\n",yytext);charcount= charcount + yyleng;}
-")" {printf("T_RPAREN %s\n",yytext);charcount= charcount + yyleng;}
-"]" {printf("T_RSB %s\n",yytext);charcount= charcount + yyleng;}
-";"  {printf("T_SEMICOLON %s\n",yytext);charcount= charcount + yyleng;}
+"||" 		{printf("T_OR %s\n",yytext);charcount= charcount + yyleng;	return T_OR; }
+"+" 		{printf("T_PLUS %s\n",yytext);charcount= charcount + yyleng;	return T_PLUS; }
+"}"  		{printf("T_RCB %s\n",yytext);charcount= charcount + yyleng;	return T_RCB; } 
 
-
-{stringescape} {printf("T_STRINGCONSTANT %s\n",yytext);charcount= charcount + yyleng;}
-
-{dquote}\\[^nbtrvab'"\\]{dquote} {fprintf(stderr,"ERROR: Invalid escape character in string constant");return ERROR;}
-{dquote}\\{dquote} {fprintf(stderr,"ERROR: Invalid escape character in string constant");return ERROR;}
+">>" 		{printf("T_RIGHTSHIFT %s\n",yytext);charcount= charcount + yyleng;	return T_RIGHTSHIFT; }
+")" 		{printf("T_RPAREN %s\n",yytext);charcount= charcount + yyleng;		return T_RPAREN; }
+"]" 		{printf("T_RSB %s\n",yytext);charcount= charcount + yyleng;		return T_RSB; }
+";"  		{printf("T_SEMICOLON %s\n",yytext);charcount= charcount + yyleng;	return T_SEMICOLON; }
 
 
-{stringlit} {printf("T_STRINGCONSTANT %s\n",yytext);charcount= charcount + yyleng;}
+{stringescape} 	{printf("T_STRINGCONSTANT %s\n",yytext);charcount= charcount + yyleng; return T_STRINGCONSTANT; }
 
-{squote}\\{squote} {fprintf(stderr,"ERROR: Invalid escape in char constant");return ERROR;}
-({charlit})|({charwithescape}) {printf("T_CHARCONSTANT %s\n",yytext);charcount= charcount + yyleng;}
+{dquote}\\[^nbtrvab'"\\]{dquote} 	{fprintf(stderr,"ERROR: Invalid escape character in string constant");return ERROR;}
+{dquote}\\{dquote} 			{fprintf(stderr,"ERROR: Invalid escape character in string constant");return ERROR;}
+
+
+{stringlit} 	{printf("T_STRINGCONSTANT %s\n",yytext);charcount= charcount + yyleng;}
+
+{squote}\\{squote} 			{fprintf(stderr,"ERROR: Invalid escape in char constant");return ERROR;}
+({charlit})|({charwithescape}) 		{printf("T_CHARCONSTANT %s\n",yytext);charcount= charcount + yyleng;}
  
 
-('') {fprintf(stderr,"Empty char constant at line %i and position %i\n",linecount,charcount + yyleng); return ERROR;}
+('') 		{fprintf(stderr,"Empty char constant at line %i and position %i\n",linecount,charcount + yyleng); return ERROR;}
 
-{squote}..{squote} {fprintf(stderr,"Invalid char constant length at line %i and position %i\n",linecount,charcount + yyleng);return ERROR;} 
-(.) {fprintf(stderr,"ERROR at line %i position %i \n",linecount, charcount + yyleng);return ERROR;}
+{squote}..{squote} 			{fprintf(stderr,"Invalid char constant length at line %i and position %i\n",linecount,charcount + yyleng);return ERROR;} 
+(.) 		{fprintf(stderr,"ERROR at line %i position %i \n",linecount, charcount + yyleng);return ERROR;}
 %%
 
 
