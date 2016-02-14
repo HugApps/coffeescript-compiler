@@ -58,7 +58,21 @@ field_decl_list: 	field_decl {}
 			| field_decl field_decl_list {}
 			;
 
-field_decl:	T_SEMICOLON {};
+field_decl:	decaf_type field_list T_SEMICOLON {}
+		| decaf_type field_assign T_SEMICOLON {}
+		;
+
+field_list:	field {}
+		| field T_COMMA field_list {}
+		;
+
+field:		T_ID {}
+		| T_ID T_LSB T_INTCONSTANT T_RSB {}
+		;
+
+field_assign:	T_ID T_EQ constant {}
+		;
+
 
 method_decl_list:	method_decl {}
 			| method_decl method_decl_list {}
@@ -66,6 +80,15 @@ method_decl_list:	method_decl {}
 
 method_decl:	T_SEMICOLON {};
 
+
+constant:	T_INTCONSTANT {}
+		| bool {}
+		| T_CHARCONSTANT {}
+		;
+
+bool:		T_TRUE {}
+		| T_FALSE {}
+		;
 
 %%
 
