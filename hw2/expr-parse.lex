@@ -4,8 +4,7 @@
 
 %}
 
-whitespc	[ \t]+
-digit		[0-9]+
+[a-z]    { return ID; } /*needs to be as the decaf specification*/
 
 
 %%
@@ -18,14 +17,8 @@ digit		[0-9]+
 		}
 
 "+"		return(PLUS);
-"-"		return(MINUS);
-
 "*"		return(TIMES);
-"/"		return(DIVIDE);
+"("		return(LPAREN);
+")"		return(RPAREN);
 
-"^"		return(POWER);
-
-"("		return(LEFT_PAREN);
-")"		return(RIGHT_PAREN);
-
-"\n"	return(END);
+/*"\n"	return(END);*/
