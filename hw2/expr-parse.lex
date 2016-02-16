@@ -1,30 +1,16 @@
 %{
-
+#include "expr-parse.tab.h"
 #include <stdlib.h>
-#include <string.h>
-#define ID 256
+extern int yylval;
 %}
 
-
-
 %%
 
-"+"		{printf("PLUS");};
-"*"		{printf("TIMES");};
-"("		{printf("LPAREN");};
-")"		{printf("RPAREN");};
+"+"		{printf("PLUS"); return PLUS;};
+"*"		{printf("TIMES"); return TIMES;};
+"("		{printf("LPAREN"); return LPAREN;};
+")"		{printf("RPAREN"); return RPAREN;};
 
-[a-zA-Z][a-zA-Z0-9]*    { return ID; } /*needs to be as the decaf specification*/
+[a-zA-Z]    { yylval = yytext[0]; return ID; } /*needs to be as the decaf specification*/
 
 %%
-
-int main(void) {
-  int token;
-  while ((token = yylex())) {
-    switch (token) {
-      case ID: printf("ID %s", yytext); break;
-      default: printf("Error: %s not recognized\n", yytext);
-    }
-  }
-  exit(0);
-}
