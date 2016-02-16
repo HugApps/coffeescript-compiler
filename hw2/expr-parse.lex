@@ -8,8 +8,8 @@ extern int yylval;
 
 "+"		{printf("PLUS"); return PLUS;};
 "*"		{printf("TIMES"); return TIMES;};
-"("		{printf("LPAREN"); return LPAREN;};
-")"		{printf("RPAREN"); return RPAREN;};
+"("		{printf("("); return LPAREN;};
+")"		{printf(")"); return RPAREN;};
 
 [a-zA-Z]    { yylval = yytext[0]; return ID; } /*needs to be as the decaf specification*/
 

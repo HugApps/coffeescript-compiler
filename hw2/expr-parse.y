@@ -15,7 +15,7 @@ t : t TIMES f
    ;
 
 f : LPAREN e RPAREN
-   | ID { printf("ID %d",$1); }
+   | ID { printf("(ID %c)",$1); }
    ;
 
 %%
