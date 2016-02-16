@@ -15,17 +15,7 @@ t : t TIMES f
    ;
 
 f : LPAREN e RPAREN
-   | ID { fprintf('ID'%d,$1); }
+   | ID { printf("ID %d",$1); }
    ;
 
 %%
-
-void yyerror(char *s) {
-   fprintf(stderr, "%s\n", s);
-}
-
-int main(void) {
-   yyparse();
-   return 0;
-}
-
