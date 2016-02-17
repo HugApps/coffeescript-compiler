@@ -93,7 +93,7 @@ true 		{printf("T_TRUE %s\n",yytext);charcount= charcount + yyleng;	return T_TRU
 void 		{printf("T_VOID %s\n",yytext);charcount= charcount + yyleng;	return T_VOID; }
 while 		{printf("T_WHILE %s\n",yytext);charcount= charcount + yyleng; 	return T_WHILE; }
 {id} 		{printf("T_ID %s\n",yytext); charcount= charcount + yyleng;	
-		yylval.str_t = strdup(yytext); }
+		yylval.str_t = strdup(yytext); return T_ID; }
 		/*yylval->lvalue = yytext[0] - 'a'; return T_ID; }*/
 
 (\{) 		{printf("T_LCB %s\n",yytext);charcount= charcount + yyleng;	return T_LCB; }

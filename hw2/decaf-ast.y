@@ -27,18 +27,18 @@ bool issym[26];
 
 %%
 
-program: 	T_CLASS {printf("Class only\n");}
-		| T_CLASS class {printf("Entering class\n");};
+program: 	class {printf("Class without extern\n");}
+		| extern_list class {printf("Class with extern\n");}		
+		;
 
 class: 		//T_CLASS T_ID T_LCB field_decl_list method_decl_list T_RCB {}
 		//| T_CLASS T_ID T_LCB field_decl_list T_RCB {}
 		//| T_CLASS T_ID T_LCB method_decl_list T_RCB {}
 		
-		T_ID T_LCB T_RCB {printf("Class %s\n", $1);}
+		T_CLASS T_ID T_LCB T_RCB {printf("Class %s\n", $2);}
 		;
 /*		
-		| extern_list class {printf("Class with extern\n");}		
-		;
+		
 
 extern_list: 	extern {}
 		| extern extern_list {}
