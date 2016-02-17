@@ -93,7 +93,8 @@ true 		{printf("T_TRUE %s\n",yytext);charcount= charcount + yyleng;	return T_TRU
 void 		{printf("T_VOID %s\n",yytext);charcount= charcount + yyleng;	return T_VOID; }
 while 		{printf("T_WHILE %s\n",yytext);charcount= charcount + yyleng; 	return T_WHILE; }
 {id} 		{printf("T_ID %s\n",yytext); charcount= charcount + yyleng;	
-		yylval.lvalue = yytext[0] - 'a'; return T_ID; }
+		yylval.str_t = strdup(yytext); }
+		/*yylval->lvalue = yytext[0] - 'a'; return T_ID; }*/
 
 (\{) 		{printf("T_LCB %s\n",yytext);charcount= charcount + yyleng;	return T_LCB; }
 "<<"  		{printf("T_LEFTSHIFT %s\n",yytext);charcount= charcount + yyleng; return T_LEFTSHIFT; }
@@ -138,7 +139,7 @@ while 		{printf("T_WHILE %s\n",yytext);charcount= charcount + yyleng; 	return T_
 
 
 
-int main (){
+/*int main (){
 int token;
 int position;
 while((token = yylex())){
@@ -148,7 +149,9 @@ while((token = yylex())){
 
 }
 printf("%d",position);
+
+yyparse();
         
 }
 	        
-
+*/
