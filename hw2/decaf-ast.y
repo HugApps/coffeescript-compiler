@@ -31,25 +31,24 @@ program: 	class {printf("Class without extern\n");}
 		| extern_list class {printf("Class with extern\n");}		
 		;
 
-class: 		//T_CLASS T_ID T_LCB field_decl_list method_decl_list T_RCB {}
-		//| T_CLASS T_ID T_LCB field_decl_list T_RCB {}
-		//| T_CLASS T_ID T_LCB method_decl_list T_RCB {}
+class: 		T_CLASS T_ID T_LCB field_decl_list method_decl_list T_RCB {}
+		| T_CLASS T_ID T_LCB field_decl_list T_RCB {}
+		| T_CLASS T_ID T_LCB method_decl_list T_RCB {}
 		
-		T_CLASS T_ID T_LCB T_RCB {printf("Class %s\n", $2);}
-		;
-/*		
+		| T_CLASS T_ID T_LCB T_RCB {printf("Class %s\n", $2);}
+		;		
 		
 
-extern_list: 	extern {}
-		| extern extern_list {}
+extern_list: 	extern {printf("One extern\n");}
+		| extern extern_list {printf("Extern list\n");}
 		;
 
-extern: 	T_EXTERN method_type T_ID T_LPAREN extern_type_list T_RPAREN T_SEMICOLON {}
-		| T_EXTERN method_type T_ID T_LPAREN T_RPAREN T_SEMICOLON {}
+extern: 	T_EXTERN method_type T_ID T_LPAREN extern_type_list T_RPAREN T_SEMICOLON {printf("Extern method with params: %s\n", $3);}
+		| T_EXTERN method_type T_ID T_LPAREN T_RPAREN T_SEMICOLON {printf("Extern method without params: %s\n", $3);}
 		;
 
-method_type: 	T_VOID {}
-		| decaf_type {}
+method_type: 	T_VOID {printf("Void method\n");}
+		| decaf_type {printf("method returning a value");}
 		;
 
 extern_type_list: 	extern_type {}
@@ -122,7 +121,7 @@ statement:	T_SEMICOLON {};
 
 
 expression:	T_SEMICOLON {};
-*/
+
 /*method_call: 	T_ID T_LPAREN method_arg_list T_RPAREN {}
 		;
 
