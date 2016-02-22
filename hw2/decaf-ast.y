@@ -76,11 +76,10 @@ void printNode(Node* node) {
 %token T_WHILE T_LEFTSHIFT T_LEQ T_LT T_MINUS T_NEQ T_NOT T_OR T_PLUS T_RIGHTSHIFT
 %token T_STRINGCONSTANT T_CHARCONSTANT 
 
-%token <rvalue> T_INTCONSTANT
-%token <str_t> T_ID 
+%token <str_t> T_ID T_INTCONSTANT
 
 %type <node> class extern_list extern method_type extern_type_list extern_type decaf_type constant bool field_decl_list field_decl
-%type <node> field_list field field_assign method_decl_list method_decl typed_symbol_list typed_symbol method_block
+%type <node> method_decl_list method_decl typed_symbol_list typed_symbol method_block array_decl
 %type <node> statement_list statement expression
 
 %start program
@@ -92,9 +91,9 @@ program: 	class { root = newNode("Program(None,", ")"); addChild(root, $1); prin
 			;
 
 class: 		T_CLASS T_ID T_LCB field_decl_list method_decl_list T_RCB {}
-			| T_CLASS T_ID T_LCB field_decl_list T_RCB {}
+			| T_CLASS T_ID T_LCB field_decl_list T_RCB {Node* node = newNode("Class(", ",None)"); addChild(node, newNode($2, "")); addChild(node, $4); $$ = node;}
 			| T_CLASS T_ID T_LCB method_decl_list T_RCB {}		
-			| T_CLASS T_ID T_LCB T_RCB { Node* node = newNode("Class(", ")"); addChild(node, newNode($2, "")); $$ = node;}
+			| T_CLASS T_ID T_LCB T_RCB { Node* node = newNode("Class(", ",None,None)"); addChild(node, newNode($2, "")); $$ = node;}
 			;		
 		
 
@@ -132,24 +131,16 @@ bool:		T_TRUE {}
 		| T_FALSE {}
 		;
 
-field_decl_list: 	field_decl {}
-			| field_decl field_decl_list {}
+field_decl_list: 	field_decl { $$ = $1; }
+			| field_decl field_decl_list { Node* node = newNode("", ""); addChild(node, $1); addChild(node, $2); $$ = node;}
 			;
 
-field_decl:	decaf_type field_list T_SEMICOLON {}
-		| decaf_type field_assign T_SEMICOLON {}
-		;
+field_decl:	decaf_type T_ID T_SEMICOLON { Node* node = newNode("FieldDecl(",",Scalar)"); addChild(node, newNode($2,"")); addChild(node, $1); $$ = node; }
+			| decaf_type T_ID array_decl T_SEMICOLON { Node* node = newNode("FieldDecl(",")"); addChild(node, newNode($2,"")); addChild(node, $1); addChild(node, $3); $$ = node;}
+			;
 
-field_list:	field {}
-		| field T_COMMA field_list {}
-		;
-
-field:		T_ID {}
-		| T_ID T_LSB T_INTCONSTANT T_RSB {}
-		;
-
-field_assign:	T_ID T_EQ constant {}
-		;
+array_decl:	T_LSB T_INTCONSTANT T_RSB { Node* node = newNode("Array(",")"); addChild(node, newNode($2,"")); $$ = node;}
+			;
 
 method_decl_list:	method_decl {}
 			| method_decl method_decl_list {}
