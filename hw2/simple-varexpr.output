@@ -1,0 +1,455 @@
+Grammar
+
+    0 $accept: statement_list $end
+
+    1 statement_list: statement
+    2               | statement '\n'
+    3               | statement '\n' statement_list
+    4               | statement statement_list
+
+    5 statement: expression
+    6          | T_NAME '=' expression
+
+    7 expression: expression '+' T_NUMBER
+    8           | expression '-' T_NUMBER
+    9           | expression '+' T_DOUBLE
+   10           | expression '-' T_DOUBLE
+   11           | expression '+' T_NAME
+   12           | expression '-' T_NAME
+   13           | T_NAME
+   14           | T_NUMBER
+   15           | T_DOUBLE
+   16           | '(' expression ')'
+   17           | T_EXP '(' expression ')'
+   18           | T_SQRT '(' expression ')'
+   19           | T_LOG '(' expression ')'
+
+
+Terminals, with rules where they appear
+
+$end (0) 0
+'\n' (10) 2 3
+'(' (40) 16 17 18 19
+')' (41) 16 17 18 19
+'+' (43) 7 9 11
+'-' (45) 8 10 12
+'=' (61) 6
+error (256)
+T_NUMBER (258) 7 8 14
+T_DOUBLE (259) 9 10 15
+T_NAME (260) 6 11 12 13
+T_SQRT (261) 18
+T_EXP (262) 17
+T_LOG (263) 19
+
+
+Nonterminals, with rules where they appear
+
+$accept (15)
+    on left: 0
+statement_list (16)
+    on left: 1 2 3 4, on right: 0 3 4
+statement (17)
+    on left: 5 6, on right: 1 2 3 4
+expression (18)
+    on left: 7 8 9 10 11 12 13 14 15 16 17 18 19, on right: 5 6 7 8
+    9 10 11 12 16 17 18 19
+
+
+State 0
+
+    0 $accept: . statement_list $end
+
+    T_NUMBER  shift, and go to state 1
+    T_DOUBLE  shift, and go to state 2
+    T_NAME    shift, and go to state 3
+    T_SQRT    shift, and go to state 4
+    T_EXP     shift, and go to state 5
+    T_LOG     shift, and go to state 6
+    '('       shift, and go to state 7
+
+    statement_list  go to state 8
+    statement       go to state 9
+    expression      go to state 10
+
+
+State 1
+
+   14 expression: T_NUMBER .
+
+    $default  reduce using rule 14 (expression)
+
+
+State 2
+
+   15 expression: T_DOUBLE .
+
+    $default  reduce using rule 15 (expression)
+
+
+State 3
+
+    6 statement: T_NAME . '=' expression
+   13 expression: T_NAME .
+
+    '='  shift, and go to state 11
+
+    $default  reduce using rule 13 (expression)
+
+
+State 4
+
+   18 expression: T_SQRT . '(' expression ')'
+
+    '('  shift, and go to state 12
+
+
+State 5
+
+   17 expression: T_EXP . '(' expression ')'
+
+    '('  shift, and go to state 13
+
+
+State 6
+
+   19 expression: T_LOG . '(' expression ')'
+
+    '('  shift, and go to state 14
+
+
+State 7
+
+   16 expression: '(' . expression ')'
+
+    T_NUMBER  shift, and go to state 1
+    T_DOUBLE  shift, and go to state 2
+    T_NAME    shift, and go to state 15
+    T_SQRT    shift, and go to state 4
+    T_EXP     shift, and go to state 5
+    T_LOG     shift, and go to state 6
+    '('       shift, and go to state 7
+
+    expression  go to state 16
+
+
+State 8
+
+    0 $accept: statement_list . $end
+
+    $end  shift, and go to state 17
+
+
+State 9
+
+    1 statement_list: statement .
+    2               | statement . '\n'
+    3               | statement . '\n' statement_list
+    4               | statement . statement_list
+
+    T_NUMBER  shift, and go to state 1
+    T_DOUBLE  shift, and go to state 2
+    T_NAME    shift, and go to state 3
+    T_SQRT    shift, and go to state 4
+    T_EXP     shift, and go to state 5
+    T_LOG     shift, and go to state 6
+    '\n'      shift, and go to state 18
+    '('       shift, and go to state 7
+
+    $default  reduce using rule 1 (statement_list)
+
+    statement_list  go to state 19
+    statement       go to state 9
+    expression      go to state 10
+
+
+State 10
+
+    5 statement: expression .
+    7 expression: expression . '+' T_NUMBER
+    8           | expression . '-' T_NUMBER
+    9           | expression . '+' T_DOUBLE
+   10           | expression . '-' T_DOUBLE
+   11           | expression . '+' T_NAME
+   12           | expression . '-' T_NAME
+
+    '+'  shift, and go to state 20
+    '-'  shift, and go to state 21
+
+    $default  reduce using rule 5 (statement)
+
+
+State 11
+
+    6 statement: T_NAME '=' . expression
+
+    T_NUMBER  shift, and go to state 1
+    T_DOUBLE  shift, and go to state 2
+    T_NAME    shift, and go to state 15
+    T_SQRT    shift, and go to state 4
+    T_EXP     shift, and go to state 5
+    T_LOG     shift, and go to state 6
+    '('       shift, and go to state 7
+
+    expression  go to state 22
+
+
+State 12
+
+   18 expression: T_SQRT '(' . expression ')'
+
+    T_NUMBER  shift, and go to state 1
+    T_DOUBLE  shift, and go to state 2
+    T_NAME    shift, and go to state 15
+    T_SQRT    shift, and go to state 4
+    T_EXP     shift, and go to state 5
+    T_LOG     shift, and go to state 6
+    '('       shift, and go to state 7
+
+    expression  go to state 23
+
+
+State 13
+
+   17 expression: T_EXP '(' . expression ')'
+
+    T_NUMBER  shift, and go to state 1
+    T_DOUBLE  shift, and go to state 2
+    T_NAME    shift, and go to state 15
+    T_SQRT    shift, and go to state 4
+    T_EXP     shift, and go to state 5
+    T_LOG     shift, and go to state 6
+    '('       shift, and go to state 7
+
+    expression  go to state 24
+
+
+State 14
+
+   19 expression: T_LOG '(' . expression ')'
+
+    T_NUMBER  shift, and go to state 1
+    T_DOUBLE  shift, and go to state 2
+    T_NAME    shift, and go to state 15
+    T_SQRT    shift, and go to state 4
+    T_EXP     shift, and go to state 5
+    T_LOG     shift, and go to state 6
+    '('       shift, and go to state 7
+
+    expression  go to state 25
+
+
+State 15
+
+   13 expression: T_NAME .
+
+    $default  reduce using rule 13 (expression)
+
+
+State 16
+
+    7 expression: expression . '+' T_NUMBER
+    8           | expression . '-' T_NUMBER
+    9           | expression . '+' T_DOUBLE
+   10           | expression . '-' T_DOUBLE
+   11           | expression . '+' T_NAME
+   12           | expression . '-' T_NAME
+   16           | '(' expression . ')'
+
+    '+'  shift, and go to state 20
+    '-'  shift, and go to state 21
+    ')'  shift, and go to state 26
+
+
+State 17
+
+    0 $accept: statement_list $end .
+
+    $default  accept
+
+
+State 18
+
+    2 statement_list: statement '\n' .
+    3               | statement '\n' . statement_list
+
+    T_NUMBER  shift, and go to state 1
+    T_DOUBLE  shift, and go to state 2
+    T_NAME    shift, and go to state 3
+    T_SQRT    shift, and go to state 4
+    T_EXP     shift, and go to state 5
+    T_LOG     shift, and go to state 6
+    '('       shift, and go to state 7
+
+    $default  reduce using rule 2 (statement_list)
+
+    statement_list  go to state 27
+    statement       go to state 9
+    expression      go to state 10
+
+
+State 19
+
+    4 statement_list: statement statement_list .
+
+    $default  reduce using rule 4 (statement_list)
+
+
+State 20
+
+    7 expression: expression '+' . T_NUMBER
+    9           | expression '+' . T_DOUBLE
+   11           | expression '+' . T_NAME
+
+    T_NUMBER  shift, and go to state 28
+    T_DOUBLE  shift, and go to state 29
+    T_NAME    shift, and go to state 30
+
+
+State 21
+
+    8 expression: expression '-' . T_NUMBER
+   10           | expression '-' . T_DOUBLE
+   12           | expression '-' . T_NAME
+
+    T_NUMBER  shift, and go to state 31
+    T_DOUBLE  shift, and go to state 32
+    T_NAME    shift, and go to state 33
+
+
+State 22
+
+    6 statement: T_NAME '=' expression .
+    7 expression: expression . '+' T_NUMBER
+    8           | expression . '-' T_NUMBER
+    9           | expression . '+' T_DOUBLE
+   10           | expression . '-' T_DOUBLE
+   11           | expression . '+' T_NAME
+   12           | expression . '-' T_NAME
+
+    '+'  shift, and go to state 20
+    '-'  shift, and go to state 21
+
+    $default  reduce using rule 6 (statement)
+
+
+State 23
+
+    7 expression: expression . '+' T_NUMBER
+    8           | expression . '-' T_NUMBER
+    9           | expression . '+' T_DOUBLE
+   10           | expression . '-' T_DOUBLE
+   11           | expression . '+' T_NAME
+   12           | expression . '-' T_NAME
+   18           | T_SQRT '(' expression . ')'
+
+    '+'  shift, and go to state 20
+    '-'  shift, and go to state 21
+    ')'  shift, and go to state 34
+
+
+State 24
+
+    7 expression: expression . '+' T_NUMBER
+    8           | expression . '-' T_NUMBER
+    9           | expression . '+' T_DOUBLE
+   10           | expression . '-' T_DOUBLE
+   11           | expression . '+' T_NAME
+   12           | expression . '-' T_NAME
+   17           | T_EXP '(' expression . ')'
+
+    '+'  shift, and go to state 20
+    '-'  shift, and go to state 21
+    ')'  shift, and go to state 35
+
+
+State 25
+
+    7 expression: expression . '+' T_NUMBER
+    8           | expression . '-' T_NUMBER
+    9           | expression . '+' T_DOUBLE
+   10           | expression . '-' T_DOUBLE
+   11           | expression . '+' T_NAME
+   12           | expression . '-' T_NAME
+   19           | T_LOG '(' expression . ')'
+
+    '+'  shift, and go to state 20
+    '-'  shift, and go to state 21
+    ')'  shift, and go to state 36
+
+
+State 26
+
+   16 expression: '(' expression ')' .
+
+    $default  reduce using rule 16 (expression)
+
+
+State 27
+
+    3 statement_list: statement '\n' statement_list .
+
+    $default  reduce using rule 3 (statement_list)
+
+
+State 28
+
+    7 expression: expression '+' T_NUMBER .
+
+    $default  reduce using rule 7 (expression)
+
+
+State 29
+
+    9 expression: expression '+' T_DOUBLE .
+
+    $default  reduce using rule 9 (expression)
+
+
+State 30
+
+   11 expression: expression '+' T_NAME .
+
+    $default  reduce using rule 11 (expression)
+
+
+State 31
+
+    8 expression: expression '-' T_NUMBER .
+
+    $default  reduce using rule 8 (expression)
+
+
+State 32
+
+   10 expression: expression '-' T_DOUBLE .
+
+    $default  reduce using rule 10 (expression)
+
+
+State 33
+
+   12 expression: expression '-' T_NAME .
+
+    $default  reduce using rule 12 (expression)
+
+
+State 34
+
+   18 expression: T_SQRT '(' expression ')' .
+
+    $default  reduce using rule 18 (expression)
+
+
+State 35
+
+   17 expression: T_EXP '(' expression ')' .
+
+    $default  reduce using rule 17 (expression)
+
+
+State 36
+
+   19 expression: T_LOG '(' expression ')' .
+
+    $default  reduce using rule 19 (expression)
