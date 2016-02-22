@@ -2,8 +2,55 @@
 #define YYDEBUG 1
 #include <stdio.h>
 #include <stdbool.h>
-int symtbl[26];
-bool issym[26];
+#include <stdlib.h>
+#include <string.h>
+
+char* append(char* str1, char* str2) {
+	size_t length = strlen(str1) + strlen(str2) + 1;
+    char* final_str = (char*) malloc(length);
+	strcat(strcat(final_str, str1), str2);
+	return final_str;
+}
+
+
+typedef struct Node {
+	char* pre_entry;
+	char* post_entry;
+	struct Node** children;
+	int numChildren;
+} Node;
+
+Node* root = NULL;
+Node* currNode = NULL;
+
+Node* newNode(char* pre, char* post) {
+	Node* node = (Node*) malloc(sizeof(struct Node));
+
+	node->pre_entry = pre;
+	node->post_entry = post;
+	node->children = NULL;
+	node->numChildren = 0;
+
+	return node;
+}
+
+void addChild(Node* parent, Node* childNode) {
+	if (parent->numChildren == 0) {
+		parent->children = (Node**) malloc(sizeof(Node*));
+		parent->children[0] = childNode;
+
+	} else {
+		Node** children = (Node**) malloc(sizeof(Node*) * (parent->numChildren + 1));
+		memcpy(children, parent->children, sizeof(Node*) * parent->numChildren);
+		children[parent->numChildren] = childNode;
+		parent->numChildren++;
+	}
+}
+
+void printNode(Node* node) {
+	printf("%s",node->pre_entry);
+	printf("%s",node->post_entry);
+}
 
 %}
 
@@ -23,11 +70,15 @@ bool issym[26];
 %token <rvalue> T_INTCONSTANT
 %token <str_t> T_ID 
 
+%type <str_t> class extern_list extern method_type extern_type_list extern_type decaf_type constant bool field_decl_list field_decl
+%type <str_t> field_list field field_assign method_decl_list method_decl typed_symbol_list typed_symbol method_block
+%type <str_t> statement_list statement expression
+
 %start program
 
 %%
 
-program: 	class {printf("Class without extern\n");}
+program: 	class { root = newNode("Program(None,", ")"); printNode(root); }
 		| extern_list class {printf("Class with extern\n");}		
 		;
 
@@ -154,4 +205,5 @@ unary_operator:		T_NOT {};
 */
 
 %%
+
 

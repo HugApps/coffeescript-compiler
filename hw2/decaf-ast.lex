@@ -140,18 +140,16 @@ while 		{printf("T_WHILE %s\n",yytext);charcount= charcount + yyleng; 	return T_
 
 
 /*int main (){
-int token;
-int position;
-while((token = yylex())){
-        position=position+token;
-	
+	int token;
+	int position;
+	while((token = yylex())){
+		position=position+token;
+	}
+	printf("%d",position);
 
+	yyparse();
+	printf("MAIN test\n");
 
 }
-printf("%d",position);
-
-yyparse();
-        
-}
-	        
+      
 */
