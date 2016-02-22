@@ -38,7 +38,7 @@ void addChild(Node* parent, Node* childNode) {
 	if (parent->numChildren == 0) {
 		parent->children = (Node**) malloc(sizeof(Node*));
 		parent->children[0] = childNode;
-
+		parent->numChildren++;
 	} else {
 		Node** children = (Node**) malloc(sizeof(Node*) * (parent->numChildren + 1));
 		memcpy(children, parent->children, sizeof(Node*) * parent->numChildren);
@@ -49,15 +49,23 @@ void addChild(Node* parent, Node* childNode) {
 
 void printNode(Node* node) {
 	printf("%s",node->pre_entry);
+	int i;	
+	for (i = 0; i < node->numChildren; ++i) {
+		printNode(node->children[i]);
+		if (i != node->numChildren - 1) {
+			printf(",");
+		} 
+	}
 	printf("%s",node->post_entry);
 }
 
 %}
 
 %union {
-  int rvalue; /* value of evaluated expression */
-  int lvalue; /* index into symtbl for variable name */
-  char* str_t;
+	int rvalue; /* value of evaluated expression */
+	int lvalue; /* index into symtbl for variable name */
+	char* str_t;
+	struct Node* node;	
 }
 %token T_STRINGTYPE T_VOID T_BOOLTYPE T_INTTYPE
 %token T_CLASS T_EXTERN T_EXTENDS T_NEW T_RETURN
@@ -70,23 +78,22 @@ void printNode(Node* node) {
 %token <rvalue> T_INTCONSTANT
 %token <str_t> T_ID 
 
-%type <str_t> class extern_list extern method_type extern_type_list extern_type decaf_type constant bool field_decl_list field_decl
-%type <str_t> field_list field field_assign method_decl_list method_decl typed_symbol_list typed_symbol method_block
-%type <str_t> statement_list statement expression
+%type <node> class extern_list extern method_type extern_type_list extern_type decaf_type constant bool field_decl_list field_decl
+%type <node> field_list field field_assign method_decl_list method_decl typed_symbol_list typed_symbol method_block
+%type <node> statement_list statement expression
 
 %start program
 
 %%
 
-program: 	class { root = newNode("Program(None,", ")"); printNode(root); }
-		| extern_list class {printf("Class with extern\n");}		
-		;
+program: 	class { root = newNode("Program(None,", ")"); addChild(root, $1); printNode(root); }
+			| extern_list class {printf("Class with extern\n");}		
+			;
 
 class: 		T_CLASS T_ID T_LCB field_decl_list method_decl_list T_RCB {}
-		| T_CLASS T_ID T_LCB field_decl_list T_RCB {}
-		| T_CLASS T_ID T_LCB method_decl_list T_RCB {}
-		
-		| T_CLASS T_ID T_LCB T_RCB {printf("Class %s\n", $2);}
+			| T_CLASS T_ID T_LCB field_decl_list T_RCB {}
+			| T_CLASS T_ID T_LCB method_decl_list T_RCB {}		
+			| T_CLASS T_ID T_LCB T_RCB { $$ = newNode("Class(", ")");}
 		;		
 		
 
