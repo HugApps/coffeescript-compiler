@@ -4,13 +4,17 @@
 extern int yylval;
 %}
 
+letter [a-zA-Z]
+digit [0-9]
+id  {letter}|({letter}|{digit}|\_)+
+
 %%
 
-"+"		{printf("PLUS"); return PLUS;};
-"*"		{printf("TIMES"); return TIMES;};
-"("		{printf("("); return LPAREN;};
-")"		{printf(")"); return RPAREN;};
+"+"		{ /*printf("PLUS");*/ return PLUS;};
+"*"		{return TIMES;};
+"("		{return LPAREN;};
+")"		{return RPAREN;};
 
-[a-zA-Z]    { yylval = yytext[0]; return ID; } /*needs to be as the decaf specification*/
+{id}	{ yylval = yytext[0]; return ID; } /*needs to be as the decaf specification*/
 
 %%
