@@ -78,8 +78,7 @@ void printNode(Node* node) {
 
 %token <str_t> T_ID T_INTCONSTANT
 
-%type <node> class extern_list extern method_type extern_type_list extern_type decaf_type constant bool field_decl_list field_decl
-%type <node> method_decl_list method_decl typed_symbol_list typed_symbol method_block array_decl
+%type <node> class extern_list extern method_type extern_type_list extern_type decaf_type constant bool field_decl_list field_decl method_decl_list method_decl typed_symbol_list typed_symbol method_block array_decl
 %type <node> statement_list statement expression
 
 %start program
@@ -90,9 +89,10 @@ program: 	class { root = newNode("Program(None,", ")"); addChild(root, $1); prin
 			| extern_list class { root = newNode("Program(", ")"); addChild(root, $1); addChild(root, $2); printNode(root); }		
 			;
 
-class: 		T_CLASS T_ID T_LCB field_decl_list method_decl_list T_RCB {}
+class: 		T_CLASS T_ID T_LCB field_decl_list method_decl_list T_RCB {Node* node = newNode("Class(", ")"); addChild(node, newNode($2, "")); addChild(node, $4); addChild(node, $5); $$ = node;}
 			| T_CLASS T_ID T_LCB field_decl_list T_RCB {Node* node = newNode("Class(", ",None)"); addChild(node, newNode($2, "")); addChild(node, $4); $$ = node;}
-			| T_CLASS T_ID T_LCB method_decl_list T_RCB {}		
+			| T_CLASS T_ID T_LCB method_decl_list T_RCB { Node* node = newNode("Class(", ")"); addChild(node, newNode($2, "")); addChild(node, newNode("None","")); addChild(node, $4); 
+				$$ = node;}		
 			| T_CLASS T_ID T_LCB T_RCB { Node* node = newNode("Class(", ",None,None)"); addChild(node, newNode($2, "")); $$ = node;}
 			;		
 		
@@ -107,7 +107,8 @@ extern: 	T_EXTERN method_type T_ID T_LPAREN extern_type_list T_RPAREN T_SEMICOLO
 			;
 
 method_type: 	T_VOID { $$ = newNode("VoidType",""); }
-		| decaf_type { $$ = $1; }
+		| T_INTTYPE { $$ = newNode("IntType",""); }
+		| T_BOOLTYPE { $$ = newNode("BoolType",""); }
 		;
 
 extern_type_list: 	extern_type { $$ = $1; }
@@ -142,25 +143,26 @@ field_decl:	decaf_type T_ID T_SEMICOLON { Node* node = newNode("FieldDecl(",",Sc
 array_decl:	T_LSB T_INTCONSTANT T_RSB { Node* node = newNode("Array(",")"); addChild(node, newNode($2,"")); $$ = node;}
 			;
 
-method_decl_list:	method_decl {}
-			| method_decl method_decl_list {}
+method_decl_list:	method_decl { $$ = $1; }
+			| method_decl method_decl_list { Node* node = newNode("",""); addChild(node, $1); addChild(node, $2); $$ = node; }
 			;
 
-method_decl:	method_type T_ID T_LPAREN typed_symbol_list T_RPAREN method_block {}
-		method_type T_ID T_LPAREN T_RPAREN method_block {}		
+method_decl:	method_type T_ID T_LPAREN typed_symbol_list T_RPAREN method_block { Node* node = newNode("Method(",")"); addChild(node, newNode($2, "")); addChild(node, $1); addChild(node, $4); 
+			addChild(node, $6); $$ = node;}
+		| method_type T_ID T_LPAREN T_RPAREN method_block { Node* node = newNode("Method(",")"); addChild(node, newNode($2, "")); addChild(node, $1); addChild(node, $5); $$ = node;}		
 		;
 
-typed_symbol_list:	typed_symbol {}
-			| typed_symbol T_COMMA typed_symbol_list {}
+typed_symbol_list:	typed_symbol { $$ = $1; }
+			| typed_symbol T_COMMA typed_symbol_list { Node* node = newNode("",""); addChild(node, $1); addChild(node, $3); $$ = node;}
 			;
 
-typed_symbol:	decaf_type T_ID {}
+typed_symbol:	decaf_type T_ID { Node* node = newNode("VarDef(",")"); addChild(node, $1); addChild(node,newNode($2,"")); $$ = node; }
 		;
 
 method_block: 	T_LCB typed_symbol_list statement_list T_RCB {}
-		T_LCB statement_list T_RCB {}
-		T_LCB typed_symbol_list T_RCB {}
-		T_LCB T_RCB {}
+		| T_LCB statement_list T_RCB {}
+		| T_LCB typed_symbol_list T_RCB {}
+		| T_LCB T_RCB { $$ = newNode("MethodBlock(None,None)","");}
 		;
 
 statement_list:	statement {}
