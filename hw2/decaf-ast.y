@@ -156,17 +156,17 @@ typed_symbol_list:	typed_symbol { $$ = $1; }
 			| typed_symbol T_COMMA typed_symbol_list { Node* node = newNode("",""); addChild(node, $1); addChild(node, $3); $$ = node;}
 			;
 
-typed_symbol:	decaf_type T_ID { Node* node = newNode("VarDef(",")"); addChild(node, $1); addChild(node,newNode($2,"")); $$ = node; }
+typed_symbol:	decaf_type T_ID { Node* node = newNode("VarDef(",")"); addChild(node,newNode($2,"")); addChild(node, $1); $$ = node; }
 		;
 
-method_block: 	T_LCB typed_symbol_list statement_list T_RCB {}
-		| T_LCB statement_list T_RCB {}
-		| T_LCB typed_symbol_list T_RCB {}
+method_block: 	T_LCB typed_symbol_list statement_list T_RCB { Node* node = newNode("MethodBlock(",")"); addChild(node, $2); addChild(node, $3); $$ = node; }
+		| T_LCB statement_list T_RCB { Node* node = newNode("MethodBlock(None,",")"); addChild(node, $2); $$ = node; }
+		| T_LCB typed_symbol_list T_RCB { Node* node = newNode("MethodBlock(",",None)"); addChild(node, $2); $$ = node; }
 		| T_LCB T_RCB { $$ = newNode("MethodBlock(None,None)","");}
 		;
 
-statement_list:	statement {}
-		| statement statement_list {}
+statement_list:	statement { $$ = $1; }
+		| statement statement_list { Node* node = newNode("",""); addChild(node,$1); addChild(node,$2); $$ = node;}
 		;
 
 statement:	T_SEMICOLON {};
