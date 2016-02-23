@@ -1,7 +1,8 @@
 %{
 #include "expr-parse.tab.h"
 #include <stdlib.h>
-extern int yylval;
+#include <stdio.h>
+
 %}
 
 letter [a-zA-Z]
@@ -15,6 +16,6 @@ id  {letter}|({letter}|{digit}|\_)+
 "("		{return LPAREN;};
 ")"		{return RPAREN;};
 
-{id}	{ yylval = yytext[0]; return ID; } /*needs to be as the decaf specification*/
+{id}	{ yylval.stringval = strdup(yytext); return ID; } /*needs to be as the decaf specification*/
 
 %%
