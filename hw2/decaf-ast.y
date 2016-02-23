@@ -79,7 +79,7 @@ void printNode(Node* node) {
 
 %token <str_t> T_ID T_INTCONSTANT T_STRINGCONSTANT
 
-%type <node> class extern_list extern method_type extern_type_list extern_type decaf_type constant bool field_decl_list field_decl method_decl_list method_decl typed_symbol_list typed_symbol method_block array_decl method_call method_arg_list method_arg binary_operator unary_operator
+%type <node> class extern_list extern method_type extern_type_list extern_type decaf_type constant bool field_decl_list field_decl method_decl_list method_decl typed_symbol_list typed_symbol method_block array_decl method_call method_arg_list method_arg
 %type <node> statement_list statement expression bin_expr_1 bin_expr_2 bin_expr_3 bin_expr_4 bin_expr_5 expr_6 expr_7
 
 %left T_PLUS T_MINUS T_MULT T_DIV T_LEFTSHIFT T_RIGHTSHIFT T_MOD T_LT T_GT T_LEQ T_GEQ T_EQ T_NEQ T_AND T_OR
@@ -236,25 +236,6 @@ method_arg_list:	method_arg { $$ = $1; }
 method_arg:	T_STRINGCONSTANT { Node* node = newNode("StringConstant(",")"); addChild(node, newNode($1, "")); $$ = node; }
         	| expression { $$ = $1; }
 		;
-
-binary_operator:	T_PLUS {}
-			| T_MINUS {}
-			| T_MULT {}
-			| T_DIV {}
-			| T_LEFTSHIFT {}
-			| T_RIGHTSHIFT {}
-			| T_MOD {}
-			| T_LT {}
-			| T_GT {}
-			| T_LEQ {}
-			| T_GEQ {}
-			| T_EQ {}
-			| T_NEQ {}
-			| T_AND {}
-			| T_OR {}
-			;
-
-unary_operator:		T_NOT {};
 
 %%
 
