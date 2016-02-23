@@ -94,7 +94,6 @@ void 		{printf("T_VOID %s\n",yytext);charcount= charcount + yyleng;	return T_VOI
 while 		{printf("T_WHILE %s\n",yytext);charcount= charcount + yyleng; 	return T_WHILE; }
 {id} 		{printf("T_ID %s\n",yytext); charcount= charcount + yyleng;	
 		yylval.str_t = strdup(yytext); return T_ID; }
-		/*yylval->lvalue = yytext[0] - 'a'; return T_ID; }*/
 
 (\{) 		{printf("T_LCB %s\n",yytext);charcount= charcount + yyleng;	return T_LCB; }
 "<<"  		{printf("T_LEFTSHIFT %s\n",yytext);charcount= charcount + yyleng; return T_LEFTSHIFT; }
@@ -125,7 +124,7 @@ while 		{printf("T_WHILE %s\n",yytext);charcount= charcount + yyleng; 	return T_
 {dquote}\\{dquote} 			{fprintf(stderr,"ERROR: Invalid escape character in string constant");return ERROR;}
 
 
-{stringlit} 	{printf("T_STRINGCONSTANT %s\n",yytext);charcount= charcount + yyleng; return T_STRINGCONSTANT; }
+{stringlit} 	{printf("T_STRINGCONSTANT %s\n",yytext); yylval.str_t = strdup(yytext); charcount= charcount + yyleng; return T_STRINGCONSTANT; }
 
 {squote}\\{squote} 			{fprintf(stderr,"ERROR: Invalid escape in char constant");return ERROR;}
 ({charlit})|({charwithescape}) 		{printf("T_CHARCONSTANT %s\n",yytext);charcount= charcount + yyleng; return T_CHARCONSTANT;}

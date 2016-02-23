@@ -74,11 +74,11 @@ void printNode(Node* node) {
 %token T_BREAK T_CONTINUE T_ELSE T_AND T_ASSIGN T_DIV T_EQ 
 %token T_FALSE T_FOR T_MULT T_MOD T_GEQ T_GT T_IF T_NULL T_TRUE
 %token T_WHILE T_LEFTSHIFT T_LEQ T_LT T_MINUS T_NEQ T_NOT T_OR T_PLUS T_RIGHTSHIFT
-%token T_STRINGCONSTANT T_CHARCONSTANT 
+%token T_CHARCONSTANT 
 
-%token <str_t> T_ID T_INTCONSTANT
+%token <str_t> T_ID T_INTCONSTANT T_STRINGCONSTANT
 
-%type <node> class extern_list extern method_type extern_type_list extern_type decaf_type constant bool field_decl_list field_decl method_decl_list method_decl typed_symbol_list typed_symbol method_block array_decl
+%type <node> class extern_list extern method_type extern_type_list extern_type decaf_type constant bool field_decl_list field_decl method_decl_list method_decl typed_symbol_list typed_symbol method_block array_decl method_call method_arg_list method_arg
 %type <node> statement_list statement expression
 
 %start program
@@ -128,8 +128,8 @@ constant:	T_INTCONSTANT {}
 		| T_CHARCONSTANT {}
 		;
 
-bool:		T_TRUE {}
-		| T_FALSE {}
+bool:		T_TRUE { $$ = newNode("True",""); }
+		| T_FALSE { $$ = newNode("False","");}
 		;
 
 field_decl_list: 	field_decl { $$ = $1; }
@@ -171,25 +171,29 @@ statement_list:	statement { $$ = $1; }
 
 statement:	T_BREAK T_SEMICOLON { $$ = newNode("BreakStmt",""); }
 		| T_CONTINUE T_SEMICOLON { $$ = newNode("ContinueStmt",""); }
+		| method_call T_SEMICOLON { $$ = $1; }
 		;
 
-
-
-expression:	I_ID { Node* node = newNode("VariableExpr(",")");  addChild(node, newNode($1,"")); $$ = node; };
-
-rval:		I_ID VariableExpr(identifier name)
-        	| ArrayLocExpr(identifier name, expr index, expr value)
-
-/*method_call: 	T_ID T_LPAREN method_arg_list T_RPAREN {}
+expression:	T_ID { Node* node = newNode("VariableExpr(",")");  addChild(node, newNode($1,"")); $$ = node; }
+		| T_ID T_LSB expression T_RSB { Node* node = newNode("ArrayLocExpr(",")");  addChild(node, newNode($1,"")); addChild(node, $3); $$ = node;}
+		| method_call { $$ = $1; }
+		| T_INTCONSTANT { Node* node = newNode("NumberExpr(",")"); addChild(node, newNode($1,"")); $$ = node; }
+		| bool { Node* node = newNode("BoolExpr(",")"); addChild(node, $1); $$ = node; }
 		;
 
-method_arg_list:	method_arg {}
-			| method_arg T_COMMA method_arg_list {}
+method_call: 	T_ID T_LPAREN method_arg_list T_RPAREN { Node* node = newNode("MethodCall(",")"); addChild(node, newNode($1,"")); addChild(node, $3); $$ = node; }
+		| T_ID T_LPAREN T_RPAREN { Node* node = newNode("MethodCall(",",None)"); addChild(node, newNode($1,"")); $$ = node; }
+		;
+
+method_arg_list:	method_arg { $$ = $1; }
+			| method_arg T_COMMA method_arg_list { Node* node = newNode("",""); addChild(node, $1); addChild(node, $3); $$ = node;}
 			;
 
-method_arg:	T_STRINGCONSTANT {}
-        	| expression {}
+method_arg:	T_STRINGCONSTANT { Node* node = newNode("StringConstant(",")"); addChild(node, newNode($1, "")); $$ = node; }
+        	| expression { $$ = $1; }
 		;
+/*
+
 
 binary_operator:	T_PLUS {}
 			| T_MINUS {}
