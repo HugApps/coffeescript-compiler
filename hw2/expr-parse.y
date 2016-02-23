@@ -2,11 +2,11 @@
 #include <stdio.h> 
 #include <string.h>
 #include <stdlib.h>
+
 char* result;
-char* test(char* s1, char* s2);
 char* concat(char* id, char* strbegin, char* strend);
-char otherstring[256];
 void yyerror(char *s);
+
 %}
 
 %union {
@@ -22,8 +22,8 @@ char* stringval;
 
 %%
 
-e : e PLUS t { printf("(e (%s plus %s))",$1,$3);}
-   | t { $$ = concat($1,"(e ",")"); printf("%s",$$); }
+e : e PLUS t { printf("(e %s (PLUS +) %s)",$1,$3);}
+   | t { $$ = concat($1,"(e ",")"); /*printf("%s",$$);*/ }
    ;
 
 t : e TIMES f { printf("times"); }
@@ -44,25 +44,14 @@ char* concat(char* id, char* strbegin, char* strend){
    	return result;
 }
 
-
-char* test(char* s1, char* s2){
-	result = malloc(strlen(s1)+strlen(s2)+1);
-	//printf("in test: %s", s1);
-	strcpy(result,s1);
-	strcat(result,s2);
-	//printf("result %s",result);
-   	return result;
-}
-
 void yyerror(char *error){
   extern char *yytext;
   extern int yylineno;
   fprintf(stderr, "ERROR: %s at symbol '%s' on line %d\n", error, yytext, yylineno);
 }
 
-/*int main(){
+int main(){
 	yyparse();
-	printf("check");
 	free(result);
 	return 0;
-}*/
+}
