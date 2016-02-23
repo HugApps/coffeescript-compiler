@@ -229,7 +229,6 @@ expr_7:		T_LPAREN expression T_RPAREN { $$ = $2; }
 				node = newNode("UnaryExpr(UnaryMinus,Number(","))"); 
 				char* positiveNum = (char*) malloc(sizeof(char) * (strlen(number) - 1));
 				memcpy(positiveNum, number + 1, strlen(number));
-				Node* unaryNode = newNode("UnaryExpr(UnaryMinus,Number(","))");
 				addChild(node, newNode(positiveNum,"")); 			
 			} else {
 				node = newNode("NumberExpr(","))"); 
