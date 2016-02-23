@@ -23,20 +23,21 @@ char* stringval;
 %%
 
 e : e PLUS t { printf("(e %s (PLUS +) %s)",$1,$3);}
-   | t { $$ = concat($1,"(e ",")"); /*printf("%s",$$);*/ }
+   | t { $$ = concat($1,"(e ",")"); printf("%s",$$); }
    ;
 
 t : e TIMES f { printf("times"); }
    | f { $$ = concat($1,"(t ",")");}
    ;
 
-f : LPAREN e RPAREN { printf("paren"); }
+f : LPAREN e RPAREN { $$ = concat($2,"(LPAREN \\( ","(RPAREN \\)"); }
    | ID { $$ = concat($1,"(f (ID ","))"); }
    ;
 
 %%
 
 char* concat(char* id, char* strbegin, char* strend){
+	//printf("Id:%s begin:%s end:%s",id,strbegin,strend);
 	result = malloc(strlen(id)+strlen(strbegin)+strlen(strend)+1);
 	strcpy(result,strbegin);
 	strcat(result,id);
