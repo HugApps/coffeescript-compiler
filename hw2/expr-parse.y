@@ -4,8 +4,7 @@
 #include <stdlib.h>
 char* result;
 char* test(char* s1, char* s2);
-char* f_IDConcat(char* id);
-char* t_fConcat(char* id);
+char* concat(char* id, char* strbegin, char* strend);
 char otherstring[256];
 void yyerror(char *s);
 %}
@@ -21,47 +20,30 @@ char* stringval;
 %type <stringval>t
 %type <stringval>f
 
-%start e
-
 %%
 
 e : e PLUS t { printf("(e (%s plus %s))",$1,$3);}
-   | t { printf("(e %s)",$$); }
+   | t { $$ = concat($1,"(e ",")"); printf("%s",$$); }
    ;
 
 t : e TIMES f { printf("times"); }
-   | f { $$ = t_fConcat($1); }
+   | f { $$ = concat($1,"(t ",")");}
    ;
 
 f : LPAREN e RPAREN { printf("paren"); }
-   | ID { $$ =f_IDConcat($1);}
+   | ID { $$ = concat($1,"(f (ID ","))"); }
    ;
 
 %%
 
-char* f_IDConcat(char* id){
-	char fIDstringBegin[] = "(f (ID ";
-	char fIDstringEnd[] = "))";
-	result = malloc(strlen(id)+strlen(fIDstringBegin)+strlen(fIDstringEnd)+1);
-	//printf("in test: %s", id);
-	strcpy(result,fIDstringBegin);
+char* concat(char* id, char* strbegin, char* strend){
+	result = malloc(strlen(id)+strlen(strbegin)+strlen(strend)+1);
+	strcpy(result,strbegin);
 	strcat(result,id);
-	strcat(result,fIDstringEnd);
-	//printf("result %s",result);
+	strcat(result,strend);
    	return result;
 }
 
-char* t_fConcat(char* id){
-	char stringBegin[] = "(t ";
-	char stringEnd[] = ")";
-	result = malloc(strlen(id)+strlen(stringBegin)+strlen(stringEnd)+1);
-	//printf("in test: %s", id);
-	strcpy(result,stringBegin);
-	strcat(result,id);
-	strcat(result,stringEnd);
-	//printf("result %s",result);
-   	return result;
-}
 
 char* test(char* s1, char* s2){
 	result = malloc(strlen(s1)+strlen(s2)+1);
