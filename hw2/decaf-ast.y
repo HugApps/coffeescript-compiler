@@ -71,16 +71,19 @@ void printNode(Node* node) {
 %token T_STRINGTYPE T_VOID T_BOOLTYPE T_INTTYPE
 %token T_CLASS T_EXTERN T_EXTENDS T_NEW T_RETURN
 %token T_COMMA T_DOT T_SEMICOLON T_LPAREN T_RPAREN T_LCB T_RCB T_LSB T_RSB
-%token T_BREAK T_CONTINUE T_ELSE T_AND T_ASSIGN T_DIV T_EQ 
-%token T_FALSE T_FOR T_MULT T_MOD T_GEQ T_GT T_IF T_NULL T_TRUE
-%token T_WHILE T_LEFTSHIFT T_LEQ T_LT T_MINUS T_NEQ T_NOT T_OR T_PLUS T_RIGHTSHIFT
+%token T_BREAK T_CONTINUE T_IF T_ELSE  T_ASSIGN T_WHILE T_FOR
+%token T_FALSE T_TRUE T_NULL 
+%token T_NOT   
+%token T_PLUS T_MINUS T_MULT T_DIV T_LEFTSHIFT T_RIGHTSHIFT T_MOD T_LT T_GT T_LEQ T_GEQ T_EQ T_NEQ T_AND T_OR 
 %token T_CHARCONSTANT 
 
 %token <str_t> T_ID T_INTCONSTANT T_STRINGCONSTANT
 
-%type <node> class extern_list extern method_type extern_type_list extern_type decaf_type constant bool field_decl_list field_decl method_decl_list method_decl typed_symbol_list typed_symbol method_block array_decl method_call method_arg_list method_arg
+%type <node> class extern_list extern method_type extern_type_list extern_type decaf_type constant bool field_decl_list field_decl method_decl_list method_decl typed_symbol_list typed_symbol method_block array_decl method_call method_arg_list method_arg binary_operator unary_operator
 %type <node> statement_list statement expression
 
+%left T_PLUS T_MINUS T_MULT T_DIV T_LEFTSHIFT T_RIGHTSHIFT T_MOD T_LT T_GT T_LEQ T_GEQ T_EQ T_NEQ T_AND T_OR
+%right T_NOT
 %start program
 
 %%
@@ -172,6 +175,9 @@ statement_list:	statement { $$ = $1; }
 statement:	T_BREAK T_SEMICOLON { $$ = newNode("BreakStmt",""); }
 		| T_CONTINUE T_SEMICOLON { $$ = newNode("ContinueStmt",""); }
 		| method_call T_SEMICOLON { $$ = $1; }
+		| T_RETURN T_SEMICOLON { $$ = newNode("ReturnStmt(None)",""); }
+		| T_RETURN T_LPAREN T_RPAREN T_SEMICOLON { $$ = newNode("ReturnStmt(None)",""); }
+		| T_RETURN T_LPAREN expression T_RPAREN T_SEMICOLON { Node* node = newNode("ReturnStmt(",")"); addChild(node, $3); $$ = node; }
 		;
 
 expression:	T_ID { Node* node = newNode("VariableExpr(",")");  addChild(node, newNode($1,"")); $$ = node; }
@@ -179,6 +185,24 @@ expression:	T_ID { Node* node = newNode("VariableExpr(",")");  addChild(node, ne
 		| method_call { $$ = $1; }
 		| T_INTCONSTANT { Node* node = newNode("NumberExpr(",")"); addChild(node, newNode($1,"")); $$ = node; }
 		| bool { Node* node = newNode("BoolExpr(",")"); addChild(node, $1); $$ = node; }
+
+		| T_NOT expression { Node* node = newNode("UnaryExpr(",")"); addChild(node, newNode("Not","")); addChild(node, $2); $$ = node; }
+
+		| expression T_PLUS expression { Node* node = newNode("BinaryExpr(",")"); addChild(node, newNode("Plus","")); addChild(node, $1); addChild(node, $3); $$ = node; }
+		| expression T_MINUS expression { Node* node = newNode("BinaryExpr(",")"); addChild(node, newNode("Minus","")); addChild(node, $1); addChild(node, $3); $$ = node; }
+		| expression T_MULT expression { Node* node = newNode("BinaryExpr(",")"); addChild(node, newNode("Mult","")); addChild(node, $1); addChild(node, $3); $$ = node; }
+		| expression T_DIV expression { Node* node = newNode("BinaryExpr(",")"); addChild(node, newNode("Div","")); addChild(node, $1); addChild(node, $3); $$ = node; }
+		| expression T_LEFTSHIFT expression { Node* node = newNode("BinaryExpr(",")"); addChild(node, newNode("Leftshift","")); addChild(node, $1); addChild(node, $3); $$ = node; }
+		| expression T_RIGHTSHIFT expression { Node* node = newNode("BinaryExpr(",")"); addChild(node, newNode("Rightshift","")); addChild(node, $1); addChild(node, $3); $$ = node; }
+		| expression T_MOD expression { Node* node = newNode("BinaryExpr(",")"); addChild(node, newNode("Mod","")); addChild(node, $1); addChild(node, $3); $$ = node; }
+		| expression T_LT expression { Node* node = newNode("BinaryExpr(",")"); addChild(node, newNode("Lt","")); addChild(node, $1); addChild(node, $3); $$ = node; }
+		| expression T_GT expression { Node* node = newNode("BinaryExpr(",")"); addChild(node, newNode("Gt","")); addChild(node, $1); addChild(node, $3); $$ = node; }
+		| expression T_LEQ expression { Node* node = newNode("BinaryExpr(",")"); addChild(node, newNode("Leq","")); addChild(node, $1); addChild(node, $3); $$ = node; }
+		| expression T_GEQ expression { Node* node = newNode("BinaryExpr(",")"); addChild(node, newNode("Geq","")); addChild(node, $1); addChild(node, $3); $$ = node; }
+		| expression T_EQ expression { Node* node = newNode("BinaryExpr(",")"); addChild(node, newNode("Eq","")); addChild(node, $1); addChild(node, $3); $$ = node; }
+		| expression T_NEQ expression { Node* node = newNode("BinaryExpr(",")"); addChild(node, newNode("Neq","")); addChild(node, $1); addChild(node, $3); $$ = node; }
+		| expression T_AND expression { Node* node = newNode("BinaryExpr(",")"); addChild(node, newNode("And","")); addChild(node, $1); addChild(node, $3); $$ = node; }
+		| expression T_OR expression { Node* node = newNode("BinaryExpr(",")"); addChild(node, newNode("Or","")); addChild(node, $1); addChild(node, $3); $$ = node; }
 		;
 
 method_call: 	T_ID T_LPAREN method_arg_list T_RPAREN { Node* node = newNode("MethodCall(",")"); addChild(node, newNode($1,"")); addChild(node, $3); $$ = node; }
@@ -192,8 +216,6 @@ method_arg_list:	method_arg { $$ = $1; }
 method_arg:	T_STRINGCONSTANT { Node* node = newNode("StringConstant(",")"); addChild(node, newNode($1, "")); $$ = node; }
         	| expression { $$ = $1; }
 		;
-/*
-
 
 binary_operator:	T_PLUS {}
 			| T_MINUS {}
@@ -213,7 +235,6 @@ binary_operator:	T_PLUS {}
 			;
 
 unary_operator:		T_NOT {};
-*/
 
 %%
 
