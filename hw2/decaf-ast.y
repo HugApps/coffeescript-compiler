@@ -231,7 +231,7 @@ expr_7:		T_LPAREN expression T_RPAREN { $$ = $2; }
 				memcpy(positiveNum, number + 1, strlen(number));
 				addChild(node, newNode(positiveNum,"")); 			
 			} else {
-				node = newNode("NumberExpr(","))"); 
+				node = newNode("Number(","))"); 
 				addChild(node, newNode(number,"")); 
 			}
 			
