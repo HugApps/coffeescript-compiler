@@ -214,6 +214,7 @@ bin_expr_5:	bin_expr_5 T_MULT bin_expr_5 { Node* node = newNode("BinaryExpr(",")
 		;
 
 expr_6:		T_NOT expr_6 { Node* node = newNode("UnaryExpr(",")"); addChild(node, newNode("Not","")); addChild(node, $2); $$ = node; }
+		| T_MINUS expr_6 { Node* node = newNode("UnaryExpr(",")"); addChild(node, newNode("UnaryMinus","")); addChild(node, $2); $$ = node; }
 		| expr_7 { $$ = $1; }
 		;
 
@@ -221,7 +222,22 @@ expr_7:		T_LPAREN expression T_RPAREN { $$ = $2; }
 		| T_ID { Node* node = newNode("VariableExpr(",")");  addChild(node, newNode($1,"")); $$ = node; }
 		| T_ID T_LSB expression T_RSB { Node* node = newNode("ArrayLocExpr(",")");  addChild(node, newNode($1,"")); addChild(node, $3); $$ = node;}
 		| method_call { $$ = $1; }
-		| T_INTCONSTANT { Node* node = newNode("NumberExpr(",")"); addChild(node, newNode($1,"")); $$ = node; }
+		| T_INTCONSTANT { 
+			Node* node = NULL;
+			char* number = $1;
+			if (number[0] == '-') {
+				node = newNode("UnaryExpr(UnaryMinus,Number(","))"); 
+				char* positiveNum = (char*) malloc(sizeof(char) * (strlen(number) - 1));
+				memcpy(positiveNum, number + 1, strlen(number));
+				Node* unaryNode = newNode("UnaryExpr(UnaryMinus,Number(","))");
+				addChild(node, newNode(positiveNum,"")); 			
+			} else {
+				node = newNode("NumberExpr(","))"); 
+				addChild(node, newNode(number,"")); 
+			}
+			
+			$$ = node; 
+		}
 		| bool { Node* node = newNode("BoolExpr(",")"); addChild(node, $1); $$ = node; }
 		;
 
