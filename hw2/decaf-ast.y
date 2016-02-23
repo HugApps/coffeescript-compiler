@@ -169,11 +169,16 @@ statement_list:	statement { $$ = $1; }
 		| statement statement_list { Node* node = newNode("",""); addChild(node,$1); addChild(node,$2); $$ = node;}
 		;
 
-statement:	T_SEMICOLON {};
+statement:	T_BREAK T_SEMICOLON { $$ = newNode("BreakStmt",""); }
+		| T_CONTINUE T_SEMICOLON { $$ = newNode("ContinueStmt",""); }
+		;
 
 
 
-expression:	T_SEMICOLON {};
+expression:	I_ID { Node* node = newNode("VariableExpr(",")");  addChild(node, newNode($1,"")); $$ = node; };
+
+rval:		I_ID VariableExpr(identifier name)
+        	| ArrayLocExpr(identifier name, expr index, expr value)
 
 /*method_call: 	T_ID T_LPAREN method_arg_list T_RPAREN {}
 		;
