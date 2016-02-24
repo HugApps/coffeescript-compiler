@@ -63,8 +63,6 @@ void printNode(Node* node) {
 %}
 
 %union {
-	int rvalue; /* value of evaluated expression */
-	int lvalue; /* index into symtbl for variable name */
 	char* str_t;
 	struct Node* node;	
 }
@@ -152,7 +150,8 @@ method_decl_list:	method_decl { $$ = $1; }
 
 method_decl:	method_type T_ID T_LPAREN typed_symbol_list T_RPAREN method_block { Node* node = newNode("Method(",")"); addChild(node, newNode($2, "")); addChild(node, $1); addChild(node, $4); 
 			addChild(node, $6); $$ = node;}
-		| method_type T_ID T_LPAREN T_RPAREN method_block { Node* node = newNode("Method(",")"); addChild(node, newNode($2, "")); addChild(node, $1); addChild(node, $5); $$ = node;}		
+		| method_type T_ID T_LPAREN T_RPAREN method_block { Node* node = newNode("Method(",")"); addChild(node, newNode($2, "")); addChild(node, $1); addChild(node, newNode("None","")); 
+			addChild(node, $5); $$ = node;}		
 		;
 
 typed_symbol_list:	typed_symbol { $$ = $1; }
@@ -189,6 +188,8 @@ statement:	T_BREAK T_SEMICOLON { $$ = newNode("BreakStmt",""); }
 		| T_WHILE T_LPAREN expression T_RPAREN block { Node* node = newNode("WhileStmt(",")"); addChild(node, $3); addChild(node, $5); $$ = node;}
 		| T_FOR T_LPAREN assign_list T_SEMICOLON expression T_SEMICOLON assign_list T_RPAREN block { Node* node = newNode("ForStmt(",")"); addChild(node, $3); addChild(node, $5); 
 			addChild(node, $7); addChild(node, $9); $$ = node; }
+		| T_IF T_LPAREN expression T_RPAREN block { Node* node = newNode("IfStmt(",",None)"); addChild(node, $3); addChild(node, $5); $$ = node; }
+		| T_IF T_LPAREN expression T_RPAREN block T_ELSE block { Node* node = newNode("IfStmt(",")"); addChild(node, $3); addChild(node, $5); addChild(node, $7); $$ = node; }
 		;
 
 assign_list:	assign { $$ = $1; }
