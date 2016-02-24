@@ -7,6 +7,7 @@
 
 letter [a-zA-Z]
 digit [0-9]
+newline [\n]
 id  {letter}|({letter}|{digit}|\_)+
 
 %%
