@@ -94,11 +94,11 @@ program: 	class { Node* node = newNode("Program(None,", ")"); addChild(node, $1)
 			;
 
 class: 		T_CLASS T_ID T_LCB field_decl_list method_decl_list T_RCB {Node* node = newNode("Class(", ")"); addChild(node, newNode($2, "")); addChild(node, $4); addChild(node, $5); $$ = node;}
-			| T_CLASS T_ID T_LCB field_decl_list T_RCB {Node* node = newNode("Class(", ",None)"); addChild(node, newNode($2, "")); addChild(node, $4); $$ = node;}
-			| T_CLASS T_ID T_LCB method_decl_list T_RCB { Node* node = newNode("Class(", ")"); addChild(node, newNode($2, "")); addChild(node, newNode("None","")); addChild(node, $4); 
-				$$ = node;}		
-			| T_CLASS T_ID T_LCB T_RCB { Node* node = newNode("Class(", ",None,None)"); addChild(node, newNode($2, "")); $$ = node;}
-			;		
+		| T_CLASS T_ID T_LCB field_decl_list T_RCB {Node* node = newNode("Class(", ",None)"); addChild(node, newNode($2, "")); addChild(node, $4); $$ = node;}
+		| T_CLASS T_ID T_LCB method_decl_list T_RCB { Node* node = newNode("Class(", ")"); addChild(node, newNode($2, "")); addChild(node, newNode("None","")); addChild(node, $4); 
+			$$ = node;}		
+		| T_CLASS T_ID T_LCB T_RCB { Node* node = newNode("Class(", ",None,None)"); addChild(node, newNode($2, "")); $$ = node;}
+		;		
 		
 
 extern_list: 	extern { $$ = $1; }
@@ -111,8 +111,7 @@ extern: 	T_EXTERN method_type T_ID T_LPAREN extern_type_list T_RPAREN T_SEMICOLO
 			;
 
 method_type: 	T_VOID { $$ = newNode("VoidType",""); }
-		| T_INTTYPE { $$ = newNode("IntType",""); }
-		| T_BOOLTYPE { $$ = newNode("BoolType",""); }
+		| decaf_type { $$ = $1; }
 		;
 
 extern_type_list: 	extern_type { $$ = $1; }
@@ -131,12 +130,12 @@ bool:		T_TRUE { $$ = newNode("True",""); }
 		| T_FALSE { $$ = newNode("False","");}
 		;
 
-field_decl_list: 	field_decl { $$ = $1; }
+field_decl_list: 	field_decl T_SEMICOLON { $$ = $1; }
 			| field_decl field_decl_list { Node* node = newNode("", ""); addChild(node, $1); addChild(node, $2); $$ = node;}
 			;
 
-field_decl:	decaf_type T_ID T_SEMICOLON { Node* node = newNode("FieldDecl(",",Scalar)"); addChild(node, newNode($2,"")); addChild(node, $1); $$ = node; }
-			| decaf_type T_ID array_decl T_SEMICOLON { Node* node = newNode("FieldDecl(",")"); addChild(node, newNode($2,"")); addChild(node, $1); addChild(node, $3); $$ = node;}
+field_decl:	decaf_type T_ID { Node* node = newNode("FieldDecl(",",Scalar)"); addChild(node, newNode($2,"")); addChild(node, $1); $$ = node; }
+			| decaf_type T_ID array_decl { Node* node = newNode("FieldDecl(",")"); addChild(node, newNode($2,"")); addChild(node, $1); addChild(node, $3); $$ = node;}
 			;
 
 array_decl:	T_LSB T_INTCONSTANT T_RSB { Node* node = newNode("Array(",")"); addChild(node, newNode($2,"")); $$ = node;}
