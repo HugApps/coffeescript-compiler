@@ -87,7 +87,7 @@ char* stringifyNode(Node* node) {
 
 %%
 
-entry:		program { root = $1; printf("%s",stringifyNode(root)); };
+entry:		program { root = $1; printf("%s\n",stringifyNode(root)); };
 
 program: 	class { Node* node = newNode("Program(None,", ")"); addChild(node, $1); $$ = node; }
 			| extern_list class { Node* node = newNode("Program(", ")"); addChild(root, $1); addChild(root, $2); $$ = node; }		
