@@ -7,7 +7,7 @@
 
 char* append(char* str1, char* str2) {
 	size_t length = strlen(str1) + strlen(str2) + 1;
-    char* final_str = (char*) malloc(length);
+    	char* final_str = (char*) malloc(length);
 	strcat(strcat(final_str, str1), str2);
 	return final_str;
 }
@@ -48,16 +48,17 @@ void addChild(Node* parent, Node* childNode) {
 	}
 }
 
-void printNode(Node* node) {
-	printf("%s",node->pre_entry);
+char* stringifyNode(Node* node) {
+	char* toPrint = append("",node->pre_entry);
 	int i;	
 	for (i = 0; i < node->numChildren; ++i) {
-		printNode(node->children[i]);
+		toPrint = append(toPrint, stringifyNode(node->children[i]));
 		if (i != node->numChildren - 1) {
-			printf(",");
+			toPrint = append(toPrint, ",");
 		} 
 	}
-	printf("%s",node->post_entry);
+	toPrint = append(toPrint, node->post_entry);
+	return toPrint;
 }
 
 %}
@@ -77,17 +78,19 @@ void printNode(Node* node) {
 
 %token <str_t> T_ID T_INTCONSTANT T_STRINGCONSTANT
 
-%type <node> class extern_list extern method_type extern_type_list extern_type decaf_type constant bool field_decl_list field_decl method_decl_list method_decl typed_symbol_list typed_symbol method_block array_decl method_call method_arg_list method_arg assign assign_list var_decl_list var_decl block
+%type <node> program class extern_list extern method_type extern_type_list extern_type decaf_type bool field_decl_list field_decl method_decl_list method_decl typed_symbol_list typed_symbol method_block array_decl method_call method_arg_list method_arg assign assign_list var_decl_list var_decl block
 %type <node> statement_list statement expression bin_expr_1 bin_expr_2 bin_expr_3 bin_expr_4 bin_expr_5 expr_6 expr_7
 
 %left T_PLUS T_MINUS T_MULT T_DIV T_LEFTSHIFT T_RIGHTSHIFT T_MOD T_LT T_GT T_LEQ T_GEQ T_EQ T_NEQ T_AND T_OR
 %right T_NOT
-%start program
+%start entry
 
 %%
 
-program: 	class { root = newNode("Program(None,", ")"); addChild(root, $1); printNode(root); }
-			| extern_list class { root = newNode("Program(", ")"); addChild(root, $1); addChild(root, $2); printNode(root); }		
+entry:		program { root = $1; printf("%s",stringifyNode(root)); };
+
+program: 	class { Node* node = newNode("Program(None,", ")"); addChild(node, $1); $$ = node; }
+			| extern_list class { Node* node = newNode("Program(", ")"); addChild(root, $1); addChild(root, $2); $$ = node; }		
 			;
 
 class: 		T_CLASS T_ID T_LCB field_decl_list method_decl_list T_RCB {Node* node = newNode("Class(", ")"); addChild(node, newNode($2, "")); addChild(node, $4); addChild(node, $5); $$ = node;}
@@ -122,11 +125,6 @@ extern_type:	T_STRINGTYPE { $$ = newNode("StringType",""); }
 
 decaf_type:	T_INTTYPE { $$ = newNode("IntType",""); }
 		| T_BOOLTYPE { $$ = newNode("BoolType",""); }
-		;
-
-constant:	T_INTCONSTANT {}
-		| bool {}
-		| T_CHARCONSTANT {}
 		;
 
 bool:		T_TRUE { $$ = newNode("True",""); }
@@ -266,4 +264,15 @@ method_arg:	T_STRINGCONSTANT { Node* node = newNode("StringConstant(",")"); addC
 
 %%
 
+int yyerror(char *error){
+  	extern char *yytext;
+  	extern int yylineno;
+  	fprintf(stderr, "ERROR: %s at symbol '%s' on line %d\n", error, yytext, yylineno);
+	exit(1);
+}
+
+int main() {
+	yyparse();
+	return 0;
+}
 
