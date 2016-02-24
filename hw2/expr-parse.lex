@@ -7,7 +7,6 @@
 
 letter [a-zA-Z]
 digit [0-9]
-newline [\n]
 id  {letter}|({letter}|{digit}|\_)+
 
 %%
@@ -16,6 +15,8 @@ id  {letter}|({letter}|{digit}|\_)+
 "*"		{return TIMES;};
 "("		{return LPAREN;};
 ")"		{return RPAREN;};
+"\n"	/* ignore newlines */
+" "		/* ignore spaces */
 
 {id}	{ yylval.stringval = strdup(yytext); return ID; } /*needs to be as the decaf specification*/
 
