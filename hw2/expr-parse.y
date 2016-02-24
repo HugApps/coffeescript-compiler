@@ -33,11 +33,11 @@ e : e PLUS t { $$ = concat(concat(" (PLUS +) ",$1,$3),"(e ",")");}
   | t { $$ = concat($1,"(e ",")"); }
    ;
 
-t : e TIMES f {$$ = concat(concat(" (TIMES *) ",$1,$3),"(e ",")");}
+t : t TIMES f {$$ = concat(concat(" (TIMES *) ",$1,$3),"(t ",")");}
   | f { $$ = concat($1,"(t ",")");}
    ;
 
-f : LPAREN e RPAREN { $$ = concat($2,"(LPAREN \\( ","(RPAREN \\)"); }
+f : LPAREN e RPAREN { $$ = concat($2,"(f (LPAREN \\() "," (RPAREN \\)))"); }
    | ID { $$ = concat($1,"(f (ID ","))"); }
    ;
 %%
