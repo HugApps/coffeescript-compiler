@@ -248,21 +248,7 @@ expr_7:		T_LPAREN expression T_RPAREN { $$ = $2; }
 		| T_ID { Node* node = newNode("VariableExpr(",")");  addChild(node, newNode($1,"")); $$ = node; }
 		| T_ID T_LSB expression T_RSB { Node* node = newNode("ArrayLocExpr(",")");  addChild(node, newNode($1,"")); addChild(node, $3); $$ = node;}
 		| method_call { $$ = $1; }
-		| T_INTCONSTANT { 
-			Node* node = NULL;
-			char* number = $1;
-			if (number[0] == '-') {
-				node = newNode("UnaryExpr(UnaryMinus,Number(","))"); 
-				char* positiveNum = (char*) malloc(sizeof(char) * (strlen(number) - 1));
-				memcpy(positiveNum, number + 1, strlen(number));
-				addChild(node, newNode(positiveNum,"")); 			
-			} else {
-				node = newNode("Number(",")"); 
-				addChild(node, newNode(number,"")); 
-			}
-			
-			$$ = node; 
-		}
+		| T_INTCONSTANT { Node* node = newNode("Number(",")"); addChild(node, newNode($1,"")); $$ = node; }
 		| bool { Node* node = newNode("BoolExpr(",")"); addChild(node, $1); $$ = node; }
 		;
 
