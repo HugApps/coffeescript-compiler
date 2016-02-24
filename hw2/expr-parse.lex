@@ -7,7 +7,7 @@
 
 letter [a-zA-Z]
 digit [0-9]
-id  {letter}|({letter}|{digit}|\_)+
+id  [a-zA-Z\_][a-zA-Z\_0-9]*
 
 %%
 
@@ -18,6 +18,6 @@ id  {letter}|({letter}|{digit}|\_)+
 "\n"	/* ignore newlines */
 " "		/* ignore spaces */
 
-{id}	{ yylval.stringval = strdup(yytext); return ID; } /*needs to be as the decaf specification*/
-
+{id}	{ yylval.stringval = strdup(yytext); return ID; }; /*needs to be as the decaf specification*/
+(.) 		{return -1;};
 %%
