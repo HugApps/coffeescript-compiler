@@ -7,7 +7,7 @@
 
 letter [a-zA-Z]
 digit [0-9]
-id  [a-zA-Z\_][a-zA-Z\_0-9]*
+id  {letter}({letter}|{digit})*
 
 %%
 
