@@ -170,6 +170,10 @@ var_decl_list:	var_decl { $$ = $1; }
 		;
 
 var_decl:	decaf_type T_ID T_SEMICOLON { Node* node = newNode("VarDef(",")"); addChild(node,newNode($2,"")); addChild(node, $1); $$ = node; }
+		| decaf_type T_ID T_COMMA T_ID T_SEMICOLON { 
+			Node* main = newNode("",""); Node* node1 = newNode("VarDef(",")"); addChild(node1,newNode($2,"")); addChild(node1, $1);  addChild(main, node1);
+			Node* node2 = newNode("VarDef(",")"); addChild(node2,newNode($4,"")); addChild(node2, $1);  addChild(main, node2);
+			$$ = main; }
 		;
 
 statement_list:	statement { $$ = $1; }

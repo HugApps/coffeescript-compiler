@@ -6,6 +6,38 @@
 #define ERROR 256
 int linecount = 1;
 int charcount = 0;
+
+char* process_string (const char *s) {
+  
+  	size_t len = strlen(s);
+	char* ns = (char*) malloc(sizeof(char) * len);
+
+	int i, j;
+	  for (i = 0, j = 0; i < len; i++, j++) {
+	    if (s[i] == '\\') {
+	      i++;
+	      switch(s[i]) {
+	      case 't': ns[j] = '\t'; break;
+	      case 'v': ns[j] = '\v'; break;
+	      case 'r': ns[j] = '\r'; break;
+	      case 'n': ns[j] = '\n'; break;
+	      case 'a': ns[j] = '\a'; break;
+	      case 'f': ns[j] = '\f'; break;
+	      case 'b': ns[j] = '\b'; break;
+	      case '\\': ns[j] = '\\'; break;
+	      case '\'': ns[j] = '\''; break;
+	      case '\"': ns[j] = '\"'; break;
+	      default: 
+		ns[j] = s[i];
+	      }
+	    } else {
+	      ns[j] = s[i];
+	    }
+	  }
+	  return ns;
+}
+
+
 %}
 
 squote \'
@@ -28,7 +60,7 @@ escape_char \\([ftvnrab'"\\])
 space   [' ']
 digit [0-9]
 /*number (\+|\-)?{digit}+*/
-number (\+)?{digit}+
+number {digit}+
 whitespace [ ^\n\r\t\v\f]*
 id  {letter}({letter}|{digit}|\_)*
 hex_digit [ {digit* |(A-F)* |(a-f)*}]
@@ -125,7 +157,7 @@ while 		{printf("T_WHILE %s\n",yytext);charcount= charcount + yyleng; 	return T_
 {dquote}\\{dquote} 			{fprintf(stderr,"ERROR: Invalid escape character in string constant");return ERROR;}
 
 
-{stringlit} 	{printf("T_STRINGCONSTANT %s\n",yytext); yylval.str_t = strdup(yytext); charcount= charcount + yyleng; return T_STRINGCONSTANT; }
+{stringlit} 	{printf("T_STRINGCONSTANT %s\n",yytext); yylval.str_t = process_string(yytext); charcount= charcount + yyleng; return T_STRINGCONSTANT; }
 
 {squote}\\{squote} 			{fprintf(stderr,"ERROR: Invalid escape in char constant");return ERROR;}
 ({charlit})|({charwithescape}) 		{printf("T_CHARCONSTANT %s\n",yytext);charcount= charcount + yyleng; return T_CHARCONSTANT;}
