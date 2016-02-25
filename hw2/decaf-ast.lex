@@ -6,6 +6,39 @@
 #define ERROR 256
 int linecount = 1;
 int charcount = 0;
+
+char* process_string (const char *s) {
+  
+  	size_t len = strlen(s);
+	char* ns = (char*) malloc(sizeof(char) * len);
+
+	int i, j;
+	  for (i = 0, j = 0; i < len; i++, j++) {
+	    if (s[i] == '\\') {
+	      i++;
+	      switch(s[i]) {
+	      case 't': ns[j] = '\t'; break;
+	      case 'v': ns[j] = '\v'; break;
+	      case 'r': ns[j] = '\r'; break;
+	      case 'n': ns[j] = '\n'; break;
+	      case 'a': ns[j] = '\a'; break;
+	      case 'f': ns[j] = '\f'; break;
+	      case 'b': ns[j] = '\b'; break;
+	      case '\\': ns[j] = '\\'; break;
+	      case '\'': ns[j] = '\''; break;
+	      case '\"': ns[j] = '\"'; break;
+	      default: 
+		ns[j] = s[i];
+	      }
+	    } else {
+	      ns[j] = s[i];
+	    }
+	  }
+	  return ns;
+}
+
+
+
 %}
 
 squote \'
@@ -105,7 +138,7 @@ while 		{charcount= charcount + yyleng; 	return T_WHILE; }
 {dquote}\\{dquote} 			{return ERROR;}
 
 
-{stringlit} 	{ yylval.str_t = strdup(yytext); charcount= charcount + yyleng; return T_STRINGCONSTANT; }
+{stringlit} 	{ yylval.str_t = process_string(yytext); charcount= charcount + yyleng; return T_STRINGCONSTANT; }
 
 {squote}\\{squote} 			{return ERROR;}
 ({charlit})|({charwithescape}) 		{charcount= charcount + yyleng; return T_CHARCONSTANT;}
