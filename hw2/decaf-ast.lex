@@ -27,7 +27,7 @@ form_feed  [\f]
 escape_char \\([ftvnrab'"\\])
 space   [' ']
 digit [0-9]
-number (\+)?{digit}+
+number {digit}+
 whitespace [ ^\n\r\t\v\f]*
 id  {letter}({letter}|{digit}|\_)*
 hex_digit [ {digit* |(A-F)* |(a-f)*}]

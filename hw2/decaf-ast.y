@@ -90,8 +90,8 @@ char* stringifyNode(Node* node) {
 entry:		program { root = $1; printf("%s\n",stringifyNode(root)); };
 
 program: 	class { Node* node = newNode("Program(None,", ")"); addChild(node, $1); $$ = node; }
-			| extern_list class { Node* node = newNode("Program(", ")"); addChild(root, $1); addChild(root, $2); $$ = node; }		
-			;
+		| extern_list class { Node* node = newNode("Program(", ")"); addChild(node, $1); addChild(node, $2); $$ = node; }		
+		;
 
 class: 		T_CLASS T_ID T_LCB field_decl_list method_decl_list T_RCB {Node* node = newNode("Class(", ")"); addChild(node, newNode($2, "")); addChild(node, $4); addChild(node, $5); $$ = node;}
 		| T_CLASS T_ID T_LCB field_decl_list T_RCB {Node* node = newNode("Class(", ",None)"); addChild(node, newNode($2, "")); addChild(node, $4); $$ = node;}
@@ -106,16 +106,17 @@ extern_list: 	extern { $$ = $1; }
 		;
 
 extern: 	T_EXTERN method_type T_ID T_LPAREN extern_type_list T_RPAREN T_SEMICOLON { Node* node = newNode("ExternFunction(", ")"); addChild(node, newNode($3,"")); addChild(node, $2); 
-				Node* varDefs = newNode("VarDef(",")"); addChild(varDefs, $5); addChild(node, varDefs); $$ = node; }
-			| T_EXTERN method_type T_ID T_LPAREN T_RPAREN T_SEMICOLON { Node* node = newNode("ExternFunction(", ",None)"); addChild(node, newNode($3,"")); addChild(node, $2); $$ = node;}
-			;
+			addChild(node, $5);  $$ = node; }
+		| T_EXTERN method_type T_ID T_LPAREN T_RPAREN T_SEMICOLON { Node* node = newNode("ExternFunction(", ",None)"); addChild(node, newNode($3,"")); addChild(node, $2); $$ = node;}
+		;
 
 method_type: 	T_VOID { $$ = newNode("VoidType",""); }
 		| decaf_type { $$ = $1; }
 		;
 
-extern_type_list: 	extern_type { $$ = $1; }
-			| extern_type T_COMMA extern_type_list { Node* node = newNode("", ""); addChild(node, $1); addChild(node, $3); $$ =  node; }
+extern_type_list: 	extern_type { Node* node = newNode("VarDef(",")"); addChild(node, $1); $$ = node; }
+			| extern_type T_COMMA extern_type_list { Node* node = newNode("", ""); Node* extType = newNode("VarDef(",")"); addChild(extType, $1); addChild(node, extType); addChild(node, $3); 
+				$$ =  node; }
 			;
 
 extern_type:	T_STRINGTYPE { $$ = newNode("StringType",""); }
@@ -178,6 +179,7 @@ statement_list:	statement { $$ = $1; }
 statement:	T_BREAK T_SEMICOLON { $$ = newNode("BreakStmt",""); }
 		| T_CONTINUE T_SEMICOLON { $$ = newNode("ContinueStmt",""); }
 		| method_call T_SEMICOLON { $$ = $1; }
+		| block { $$ = $1; }
 		| T_RETURN T_SEMICOLON { $$ = newNode("ReturnStmt(None)",""); }
 		| T_RETURN T_LPAREN T_RPAREN T_SEMICOLON { $$ = newNode("ReturnStmt(None)",""); }
 		| T_RETURN T_LPAREN expression T_RPAREN T_SEMICOLON { Node* node = newNode("ReturnStmt(",")"); addChild(node, $3); $$ = node; }
