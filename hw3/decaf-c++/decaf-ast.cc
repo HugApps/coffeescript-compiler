@@ -16,7 +16,7 @@ typedef enum { voidTy, intTy, boolTy, stringTy, } decafType;
 string TyString(decafType x) {
 	switch (x) {
 		case voidTy: return string("VoidType");
-		case intTy: return string("IntType");
+		case intTy: return string("int");
 		case boolTy: return string("BoolType");
 		case stringTy: return string("StringType");
 		default: throw runtime_error("unknown type in TyString call");
@@ -74,11 +74,11 @@ string getString(decafAST *d) {
 }
 
 string buildString1(const char *Name, decafAST *a) {
-	return string(Name) + "(" + getString(a) + ")";
+	return string(Name) + "" + getString(a);
 }
 
 string buildString1(const char *Name, string a) {
-	return string(Name) + "(" + a + ")";
+	return string(Name) + "" + a ;
 }
 
 string buildString2(const char *Name, decafAST *a, decafAST *b) {
@@ -91,6 +91,10 @@ string buildString2(const char *Name, string a, decafAST *b) {
 
 string buildString2(const char *Name, string a, string b) {
 	return string(Name) + "(" + a + "," + b + ")";
+}
+
+string buildString2(string a, string b, decafAST *c) {
+	return a + b + getString(c);
 }
 
 string buildString3(const char *Name, decafAST *a, decafAST *b, decafAST *c) {
@@ -109,6 +113,10 @@ string buildString3(const char *Name, string a, string b, string c) {
 	return string(Name) + "(" + a + "," + b + "," + c + ")";
 }
 
+string buildString3(string a, string b, decafAST *c, string d) {
+	return a + b + getString(c) + d;
+}
+
 string buildString4(const char *Name, string a, decafAST *b, decafAST *c, decafAST *d) {
 	return string(Name) + "(" + a + "," + getString(b) + "," + getString(c) + "," + getString(d) + ")";
 }
@@ -124,12 +132,12 @@ string buildString4(const char *Name, decafAST *a, decafAST *b, decafAST *c, dec
 template <class T>
 string commaList(list<T> vec) {
 	string s("");
-	for (typename list<T>::iterator i = vec.begin(); i != vec.end(); i++) { 
-		s = s + (s.empty() ? string("") : string(",")) + (*i)->str(); 
+	for (typename list<T>::iterator i = vec.begin(); i != vec.end(); i++) {
+		s = s + (s.empty() ? string("") : string(",")) + (*i)->str();
 	}
 	if (s.empty()) {
 		s = string("None");
-	} 
+	}
 	return s;
 }
 
@@ -138,11 +146,11 @@ class TypedSymbol {
 	decafType Ty;
 public:
 	TypedSymbol(string s, decafType t) : Sym(s), Ty(t) {}
-	string str() { 
-		if (Sym.empty()) { 
-			return "VarDef(" + TyString(Ty) + ")"; 
-		} else { 
-			return "VarDef(" + Sym + "," + TyString(Ty) + ")";
+	string str() {
+		if (Sym.empty()) {
+			return "VarDef(" + TyString(Ty) + ")"; //Dunno about this...
+		} else {
+			return TyString(Ty) + " " + Sym + ";";
 		}
 	}
 	//virtual string getName();
@@ -159,20 +167,20 @@ public:
 		listType = ty;
 	}
 	~TypedSymbolListAST() {
-		for (list<class TypedSymbol *>::iterator i = arglist.begin(); i != arglist.end(); i++) { 
+		for (list<class TypedSymbol *>::iterator i = arglist.begin(); i != arglist.end(); i++) {
 			delete *i;
 		}
 	}
 	void push_front(string sym, decafType ty) {
 		TypedSymbol *s = new TypedSymbol(sym, ty);
-		arglist.push_front(s); 
-	}	
+		arglist.push_front(s);
+	}
 	void push_back(string sym, decafType ty) {
 		TypedSymbol *s = new TypedSymbol(sym, ty);
-		arglist.push_back(s); 
+		arglist.push_back(s);
 	}
 	void new_sym(string sym) {
-		if (arglist.empty()) { 
+		if (arglist.empty()) {
 			throw runtime_error("Error in AST creation: insertion into empty typed symbol list\n");
 		}
 		TypedSymbol *s = new TypedSymbol(sym, listType);
@@ -187,7 +195,7 @@ class decafStmtList : public decafAST {
 public:
 	decafStmtList() {}
 	~decafStmtList() {
-		for (list<decafAST *>::iterator i = stmts.begin(); i != stmts.end(); i++) { 
+		for (list<decafAST *>::iterator i = stmts.begin(); i != stmts.end(); i++) {
 			delete *i;
 		}
 	}
@@ -202,7 +210,7 @@ class NumberExprAST : public decafAST {
 	int Val;
 public:
 	NumberExprAST(int val) : Val(val) {}
-	string str() { return buildString1("Number", convertInt(Val)); }
+	string str() { return buildString1("", convertInt(Val)); }
 };
 
 /// StringConstAST - string constant
@@ -266,10 +274,10 @@ class AssignVarAST : public decafAST {
 	decafAST *Value;
 public:
 	AssignVarAST(string name, decafAST *value) : Name(name), Value(value) {}
-	~AssignVarAST() { 
+	~AssignVarAST() {
 		if (Value != NULL) { delete Value; }
 	}
-	string str() { return buildString2("AssignVar", Name, Value); }
+	string str() { return buildString3(Name, " = ", Value, ";"); }
 };
 
 /// AssignArrayLocAST - assign value to a variable
@@ -301,7 +309,7 @@ class BlockAST : public decafAST {
 	decafStmtList *Statements;
 public:
 	BlockAST(decafStmtList *vars, decafStmtList *s) : Vars(vars), Statements(s) {}
-	~BlockAST() { 
+	~BlockAST() {
 		if (Vars != NULL) { delete Vars; }
 		if (Statements != NULL) { delete Statements; }
 	}
@@ -316,7 +324,7 @@ class MethodBlockAST : public decafAST {
 	decafStmtList *Statements;
 public:
 	MethodBlockAST(decafStmtList *vars, decafStmtList *s) : Vars(vars), Statements(s) {}
-	~MethodBlockAST() { 
+	~MethodBlockAST() {
 		if (Vars != NULL) { delete Vars; }
 		if (Statements != NULL) { delete Statements; }
 	}
@@ -330,9 +338,9 @@ class IfStmtAST : public decafAST {
 	BlockAST *ElseBlock;
 public:
 	IfStmtAST(decafAST *cond, BlockAST *iftrue, BlockAST *elseblock) : Cond(cond), IfTrueBlock(iftrue), ElseBlock(elseblock) {}
-	~IfStmtAST() { 
-		delete Cond; 
-		delete IfTrueBlock; 
+	~IfStmtAST() {
+		delete Cond;
+		delete IfTrueBlock;
 		if (ElseBlock != NULL) { delete ElseBlock; }
 	}
 	string str() { return buildString3("IfStmt", Cond, IfTrueBlock, ElseBlock); }
@@ -371,7 +379,7 @@ class ReturnStmtAST : public decafAST {
 	decafAST *Value;
 public:
 	ReturnStmtAST(decafAST *value) : Value(value) {}
-	~ReturnStmtAST() { 
+	~ReturnStmtAST() {
 		if (Value != NULL) { delete Value; }
 	}
 	string str() { return buildString1("ReturnStmt", Value); }
@@ -398,11 +406,11 @@ class MethodDeclAST : public decafAST {
 	TypedSymbolListAST *FunctionArgs;
 	MethodBlockAST *Block;
 public:
-	MethodDeclAST(decafType rtype, string name, TypedSymbolListAST *fargs, MethodBlockAST *block) 
+	MethodDeclAST(decafType rtype, string name, TypedSymbolListAST *fargs, MethodBlockAST *block)
 		: ReturnType(rtype), Name(name), FunctionArgs(fargs), Block(block) {}
-	~MethodDeclAST() { 
+	~MethodDeclAST() {
 		delete FunctionArgs;
-		delete Block; 
+		delete Block;
 	}
 	string str() { return buildString4("Method", Name, TyString(ReturnType), FunctionArgs, Block); }
 };
@@ -414,7 +422,7 @@ class AssignGlobalVarAST : public decafAST {
 	decafAST *Value;
 public:
 	AssignGlobalVarAST(decafType ty, string name, decafAST *value) : Ty(ty), Name(name), Value(value) {}
-	~AssignGlobalVarAST() { 
+	~AssignGlobalVarAST() {
 		if (Value != NULL) { delete Value; }
 	}
 	string str() { return buildString3("AssignGlobalVar", Name, TyString(Ty), Value); }
@@ -441,20 +449,20 @@ public:
 		listType = ty;
 	}
 	~FieldDeclListAST() {
-		for (list<class decafAST *>::iterator i = arglist.begin(); i != arglist.end(); i++) { 
+		for (list<class decafAST *>::iterator i = arglist.begin(); i != arglist.end(); i++) {
 			delete *i;
 		}
 	}
 	void push_front(string sym, decafType ty, int sz) {
 		FieldDecl *s = new FieldDecl(sym, ty, sz);
-		arglist.push_front(s); 
-	}	
+		arglist.push_front(s);
+	}
 	void push_back(string sym, decafType ty, int sz) {
 		FieldDecl *s = new FieldDecl(sym, ty, sz);
-		arglist.push_back(s); 
+		arglist.push_back(s);
 	}
 	void new_sym(string sym, int sz) {
-		if (arglist.empty()) { 
+		if (arglist.empty()) {
 			throw runtime_error("Error in AST creation: insertion into empty field list\n");
 		}
 		FieldDecl *s = new FieldDecl(sym, listType, sz);
@@ -468,9 +476,9 @@ class ClassAST : public decafAST {
 	FieldDeclListAST *FieldDeclList;
 	decafStmtList *MethodDeclList;
 public:
-	ClassAST(string name, FieldDeclListAST *fieldlist, decafStmtList *methodlist) 
+	ClassAST(string name, FieldDeclListAST *fieldlist, decafStmtList *methodlist)
 		: Name(name), FieldDeclList(fieldlist), MethodDeclList(methodlist) {}
-	~ClassAST() { 
+	~ClassAST() {
 		if (FieldDeclList != NULL) { delete FieldDeclList; }
 		if (MethodDeclList != NULL) { delete MethodDeclList; }
 	}
@@ -496,8 +504,8 @@ class ProgramAST : public decafAST {
 	ClassAST *ClassDef;
 public:
 	ProgramAST(decafStmtList *externs, ClassAST *c) : ExternList(externs), ClassDef(c) {}
-	~ProgramAST() { 
-		if (ExternList != NULL) { delete ExternList; } 
+	~ProgramAST() {
+		if (ExternList != NULL) { delete ExternList; }
 		if (ClassDef != NULL) { delete ClassDef; }
 	}
 	string str() { return buildString2("Program", ExternList, ClassDef); }
