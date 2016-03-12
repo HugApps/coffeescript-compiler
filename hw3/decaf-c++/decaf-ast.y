@@ -4,14 +4,15 @@
 #include <string>
 #include <cstdlib>
 #include "decafast-defs.h"
-#include "llvm/Module.h"
-#include "llvm/Function.h"
-#include "llvm/PassManager.h"
-#include "llvm/CallingConv.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+
+
 #include "llvm/Analysis/Verifier.h"
-#include "llvm/Assembly/PrintModulePass.h"
-#include "llvm/Support/IRBuilder.h"
-#include "llvm/Support/raw_ostream.h"
+
+
+
 int yylex(void);
 int yyerror(char *); 
 
