@@ -4,7 +4,14 @@
 #include <string>
 #include <cstdlib>
 #include "decafast-defs.h"
-
+#include "llvm/Module.h"
+#include "llvm/Function.h"
+#include "llvm/PassManager.h"
+#include "llvm/CallingConv.h"
+#include "llvm/Analysis/Verifier.h"
+#include "llvm/Assembly/PrintModulePass.h"
+#include "llvm/Support/IRBuilder.h"
+#include "llvm/Support/raw_ostream.h"
 int yylex(void);
 int yyerror(char *); 
 
@@ -12,6 +19,8 @@ using namespace std;
 
 // print AST?
 bool printAST = true;
+static Module *TheModule;
+static IRBuilder<> Builder(getGlobalContext());
 
 #include "decaf-ast.cc"
 
@@ -312,6 +321,9 @@ bool_constant: T_TRUE
 %%
 
 int main() {
+  // Intialize LLVM module 
+  LLVMContext &Context = getGlobalContext();
+  TheModule = new Module("?",Context);
   // parse the input and create the abstract syntax tree
   int retval = yyparse();
   return(retval >= 1 ? 1 : 0);
