@@ -515,9 +515,11 @@ class ExternAST : public decafAST {
 	string Name;
 	TypedSymbolListAST *FunctionArgs;
 public:
-	ExternAST(decafType r, string n, TypedSymbolListAST *fargs) : ReturnType(r), Name(n), FunctionArgs(fargs) {}
+	ExternAST(decafType r, string n, TypedSymbolListAST *fargs) : ReturnType(r), Name(n), FunctionArgs(fargs) {if (FunctionArgs != NULL) FunctionArgs->setType(true);}
+
 	~ExternAST() {
-		if (FunctionArgs != NULL) { FunctionArgs->setType(true); }
+	delete FunctionArgs;
+
 	}
 	string str() { return buildString3("ExternFunctione", Name, TyString(ReturnType), FunctionArgs); }
 };
