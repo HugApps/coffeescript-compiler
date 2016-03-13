@@ -15,10 +15,10 @@ typedef enum { voidTy, intTy, boolTy, stringTy, } decafType;
 
 string TyString(decafType x) {
 	switch (x) {
-		case voidTy: return string("VoidType");
+		case voidTy: return string("void");
 		case intTy: return string("int");
-		case boolTy: return string("BoolType");
-		case stringTy: return string("StringType");
+		case boolTy: return string("bool");
+		case stringTy: return string("string");
 		default: throw runtime_error("unknown type in TyString call");
 	}
 }
@@ -115,6 +115,10 @@ string buildString3(const char *Name, string a, string b, string c) {
 
 string buildString3(string a, string b, decafAST *c, string d) {
 	return a + b + getString(c) + d;
+}
+
+string buildString3(decafType Ty, string cm ,string a, string cmm ,string b, string cmmm, decafAST *c, string d) {
+	return TyString(Ty) + cm + a + cmm+ b + cmmm+ getString(c) + d;
 }
 
 string buildString4(const char *Name, string a, decafAST *b, decafAST *c, decafAST *d) {
@@ -226,7 +230,7 @@ class BoolExprAST : public decafAST {
 	bool Val;
 public:
 	BoolExprAST(bool val) : Val(val) {}
-	string str() { return buildString1("BoolExpr", Val ? string("True") : string("False")); }
+	string str() { return buildString1("", Val ? string("true") : string("false")); }
 };
 
 /// VariableExprAST - Expression class for variables like "a".
@@ -425,7 +429,7 @@ public:
 	~AssignGlobalVarAST() {
 		if (Value != NULL) { delete Value; }
 	}
-	string str() { return buildString3("AssignGlobalVar", Name, TyString(Ty), Value); }
+	string str() { return buildString3(Ty, " ", Name, " ","="," ", Value ,";"); }
 };
 
 /// FieldDecl - field declaration aka Decaf global variable
