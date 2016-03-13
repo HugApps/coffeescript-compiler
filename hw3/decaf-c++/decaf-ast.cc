@@ -218,7 +218,7 @@ public:
 	void setType(bool type){
         this->isType = type;
 	}
-	string str() { return commaList<class decafAST *>(stmts,false); }
+	string str() { return commaList<class decafAST *>(stmts,isType); }
 };
 
 /// NumberExprAST - Expression class for integer numeric literals like "12".
@@ -259,7 +259,7 @@ class MethodCallAST : public decafAST {
 	string Name;
 	decafStmtList *Args;
 public:
-	MethodCallAST(string name, decafStmtList *args) : Name(name), Args(args) {}
+	MethodCallAST(string name, decafStmtList *args) : Name(name), Args(args) {if(Args != NULL) Args->setType(true);}
 	~MethodCallAST() { delete Args; }
 	string str() { return buildString2("MethodCall", Name, Args); }
 };
