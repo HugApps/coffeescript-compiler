@@ -11,7 +11,7 @@
 
 #include "llvm/Analysis/Verifier.h"
 
-
+using namespace llvm;
 
 int yylex(void);
 int yyerror(char *); 
