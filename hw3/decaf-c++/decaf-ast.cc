@@ -154,7 +154,7 @@ public:
 		if (Sym.empty()) {
 			return "VarDef(" + TyString(Ty) + ")"; //Dunno about this...
 		} else {
-			return TyString(Ty) + " " + Sym + ";";
+			return TyString(Ty) + " " + Sym;
 		}
 	}
 	//virtual string getName();
@@ -202,6 +202,9 @@ public:
 /// decafStmtList - List of Decaf statements
 class decafStmtList : public decafAST {
 	list<decafAST *> stmts;
+
+private:
+    bool isType;
 public:
 	decafStmtList() {}
 	~decafStmtList() {
@@ -212,6 +215,9 @@ public:
 	int size() { return stmts.size(); }
 	void push_front(decafAST *e) { stmts.push_front(e); }
 	void push_back(decafAST *e) { stmts.push_back(e); }
+	void setType(bool type){
+        this->isType = type;
+	}
 	string str() { return commaList<class decafAST *>(stmts,false); }
 };
 
@@ -417,7 +423,7 @@ class MethodDeclAST : public decafAST {
 	MethodBlockAST *Block;
 public:
 	MethodDeclAST(decafType rtype, string name, TypedSymbolListAST *fargs, MethodBlockAST *block)
-		: ReturnType(rtype), Name(name), FunctionArgs(fargs), Block(block) { if(FunctionArgs != NULL)FunctionArgs->setType(true);}
+		: ReturnType(rtype), Name(name), FunctionArgs(fargs), Block(block) { if(FunctionArgs != NULL) FunctionArgs->setType(true);}
 	~MethodDeclAST() {
 		delete FunctionArgs;
 		delete Block;
