@@ -503,9 +503,9 @@ class ExternAST : public decafAST {
 public:
 	ExternAST(decafType r, string n, TypedSymbolListAST *fargs) : ReturnType(r), Name(n), FunctionArgs(fargs) {}
 	~ExternAST() {
-		if (FunctionArgs != NULL) { delete FunctionArgs; }
+		if (FunctionArgs != NULL) { FunctionArgs->setType(true); }
 	}
-	string str() { return buildString3("ExternFunction", Name, TyString(ReturnType), FunctionArgs); }
+	string str() { return buildString3("ExternFunctione", Name, TyString(ReturnType), FunctionArgs); }
 };
 
 /// ProgramAST - the decaf program
