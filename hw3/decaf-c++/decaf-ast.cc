@@ -137,7 +137,7 @@ template <class T>
 string commaList(list<T> vec, bool isType) {
 	string s("");
 	for (typename list<T>::iterator i = vec.begin(); i != vec.end(); i++) {
-		s = s + (s.empty() ? string("") : string(isType ? "!!!!!!!!!!!!" : ";")) + (*i)->str();
+		s = s + (s.empty() ? string("") : string(isType ? "!!!!!!!!!!!!" : "\n")) + (*i)->str();
 	}
 	if (s.empty()) {
 		s = string("None");
@@ -339,7 +339,7 @@ class MethodBlockAST : public decafAST {
 	decafStmtList *Vars;
 	decafStmtList *Statements;
 public:
-	MethodBlockAST(decafStmtList *vars, decafStmtList *s) : Vars(vars), Statements(s) {}
+	MethodBlockAST(decafStmtList *vars, decafStmtList *s) : Vars(vars), Statements(s) {if(Vars != NULL) Vars->setType(false); if(Statements != NULL) Statements->setType(false);}
 	~MethodBlockAST() {
 		if (Vars != NULL) { delete Vars; }
 		if (Statements != NULL) { delete Statements; }
@@ -457,6 +457,10 @@ public:
 class FieldDeclListAST : public decafAST {
 	list<class decafAST *> arglist;
 	decafType listType; // this variable is used if all the symbols in the list share the same type
+
+private:
+    bool isType;
+
 public:
 	FieldDeclListAST() {}
 	FieldDeclListAST(string sym, decafType ty, int sz) {
@@ -484,7 +488,11 @@ public:
 		FieldDecl *s = new FieldDecl(sym, listType, sz);
 		arglist.push_back(s);
 	}
-	string str() { return commaList<class decafAST *>(arglist,false); }
+
+	void setType(bool type){
+        this->isType = type;
+	}
+	string str() { return commaList<class decafAST *>(arglist,isType); }
 };
 
 class ClassAST : public decafAST {
@@ -493,7 +501,7 @@ class ClassAST : public decafAST {
 	decafStmtList *MethodDeclList;
 public:
 	ClassAST(string name, FieldDeclListAST *fieldlist, decafStmtList *methodlist)
-		: Name(name), FieldDeclList(fieldlist), MethodDeclList(methodlist) {}
+		: Name(name), FieldDeclList(fieldlist), MethodDeclList(methodlist) { if(FieldDeclList != NULL) FieldDeclList->setType(false); if(MethodDeclList != NULL) MethodDeclList->setType(false);}
 	~ClassAST() {
 		if (FieldDeclList != NULL) { delete FieldDeclList; }
 		if (MethodDeclList != NULL) { delete MethodDeclList; }
