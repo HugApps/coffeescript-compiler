@@ -134,10 +134,10 @@ string buildString4(const char *Name, decafAST *a, decafAST *b, decafAST *c, dec
 }
 
 template <class T>
-string commaList(list<T> vec) {
+string commaList(list<T> vec, bool isType) {
 	string s("");
 	for (typename list<T>::iterator i = vec.begin(); i != vec.end(); i++) {
-		s = s + (s.empty() ? string("") : string(",")) + (*i)->str();
+		s = s + (s.empty() ? string("") : string(isType ? "!!!!!!!!!!!!" : ";")) + (*i)->str();
 	}
 	if (s.empty()) {
 		s = string("None");
@@ -163,6 +163,9 @@ public:
 class TypedSymbolListAST : public decafAST {
 	list<class TypedSymbol *> arglist;
 	decafType listType; // this variable is used if all the symbols in the list share the same type
+private:
+    bool isType;
+
 public:
 	TypedSymbolListAST() {}
 	TypedSymbolListAST(string sym, decafType ty) {
@@ -190,7 +193,10 @@ public:
 		TypedSymbol *s = new TypedSymbol(sym, listType);
 		arglist.push_back(s);
 	}
-	string str() { return commaList<class TypedSymbol *>(arglist); }
+	void setType(bool type){
+        this->isType = type;
+	}
+	string str() { return commaList<class TypedSymbol *>(arglist,isType); }
 };
 
 /// decafStmtList - List of Decaf statements
@@ -206,7 +212,7 @@ public:
 	int size() { return stmts.size(); }
 	void push_front(decafAST *e) { stmts.push_front(e); }
 	void push_back(decafAST *e) { stmts.push_back(e); }
-	string str() { return commaList<class decafAST *>(stmts); }
+	string str() { return commaList<class decafAST *>(stmts,false); }
 };
 
 /// NumberExprAST - Expression class for integer numeric literals like "12".
@@ -411,7 +417,7 @@ class MethodDeclAST : public decafAST {
 	MethodBlockAST *Block;
 public:
 	MethodDeclAST(decafType rtype, string name, TypedSymbolListAST *fargs, MethodBlockAST *block)
-		: ReturnType(rtype), Name(name), FunctionArgs(fargs), Block(block) {}
+		: ReturnType(rtype), Name(name), FunctionArgs(fargs), Block(block) { if(FunctionArgs != NULL)FunctionArgs->setType(true);}
 	~MethodDeclAST() {
 		delete FunctionArgs;
 		delete Block;
@@ -472,7 +478,7 @@ public:
 		FieldDecl *s = new FieldDecl(sym, listType, sz);
 		arglist.push_back(s);
 	}
-	string str() { return commaList<class decafAST *>(arglist); }
+	string str() { return commaList<class decafAST *>(arglist,false); }
 };
 
 class ClassAST : public decafAST {
