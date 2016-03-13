@@ -217,8 +217,9 @@ public:
 	void push_back(decafAST *e) { stmts.push_back(e); }
 	void setType(bool type){
         this->isType = type;
+        //printf("istype value: %d \n",type);
 	}
-	string str() { return commaList<class decafAST *>(stmts,isType); }
+	string str() { /*printf("indecafstatmentlist %d \n", isType);*/ return commaList<class decafAST *>(stmts,isType); }
 };
 
 /// NumberExprAST - Expression class for integer numeric literals like "12".
@@ -259,7 +260,7 @@ class MethodCallAST : public decafAST {
 	string Name;
 	decafStmtList *Args;
 public:
-	MethodCallAST(string name, decafStmtList *args) : Name(name), Args(args) {if(Args != NULL) Args->setType(true);}
+	MethodCallAST(string name, decafStmtList *args) : Name(name), Args(args) {/*printf("in method call ast\n");*/ if(Args != NULL) Args->setType(true);}
 	~MethodCallAST() { delete Args; }
 	string str() { return buildString2("MethodCall", Name, Args); }
 };
@@ -324,7 +325,7 @@ class BlockAST : public decafAST {
 	decafStmtList *Vars;
 	decafStmtList *Statements;
 public:
-	BlockAST(decafStmtList *vars, decafStmtList *s) : Vars(vars), Statements(s) {}
+	BlockAST(decafStmtList *vars, decafStmtList *s) : Vars(vars), Statements(s) {if(Vars != NULL) Vars->setType(false); if(Statements != NULL) Statements->setType(false);}
 	~BlockAST() {
 		if (Vars != NULL) { delete Vars; }
 		if (Statements != NULL) { delete Statements; }
@@ -380,7 +381,7 @@ class ForStmtAST : public decafAST {
 	BlockAST *Body;
 public:
 	ForStmtAST(decafStmtList *init, decafAST *cond, decafStmtList *end, BlockAST *body) :
-		InitList(init), Cond(cond), LoopEndList(end), Body(body) {}
+		InitList(init), Cond(cond), LoopEndList(end), Body(body) {if(InitList != NULL) InitList->setType(false); if(LoopEndList != NULL) LoopEndList->setType(false);}
 	~ForStmtAST() {
 		delete InitList;
 		delete Cond;
@@ -501,7 +502,7 @@ class ClassAST : public decafAST {
 	decafStmtList *MethodDeclList;
 public:
 	ClassAST(string name, FieldDeclListAST *fieldlist, decafStmtList *methodlist)
-		: Name(name), FieldDeclList(fieldlist), MethodDeclList(methodlist) { if(FieldDeclList != NULL) FieldDeclList->setType(false); if(MethodDeclList != NULL) MethodDeclList->setType(false);}
+		: Name(name), FieldDeclList(fieldlist), MethodDeclList(methodlist) { /*printf("in classast\n");*/ if(FieldDeclList != NULL) FieldDeclList->setType(false); if(MethodDeclList != NULL) MethodDeclList->setType(false);}
 	~ClassAST() {
 		if (FieldDeclList != NULL) { delete FieldDeclList; }
 		if (MethodDeclList != NULL) { delete MethodDeclList; }
@@ -529,7 +530,7 @@ class ProgramAST : public decafAST {
 	decafStmtList *ExternList;
 	ClassAST *ClassDef;
 public:
-	ProgramAST(decafStmtList *externs, ClassAST *c) : ExternList(externs), ClassDef(c) {}
+	ProgramAST(decafStmtList *externs, ClassAST *c) : ExternList(externs), ClassDef(c) {if (ExternList != NULL){ ExternList->setType(false);}}
 	~ProgramAST() {
 		if (ExternList != NULL) { delete ExternList; }
 		if (ClassDef != NULL) { delete ClassDef; }
