@@ -8,7 +8,7 @@
 // #include "llvm/IR/IRBuilder.h"
 //#include "llvm/IR/LLVMContext.h"
 
-#include "Scope.h"
+
 //#include "llvm/Analysis/Verifier.h"
 
 //using namespace llvm;
