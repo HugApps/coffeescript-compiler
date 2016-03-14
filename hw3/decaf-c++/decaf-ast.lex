@@ -172,7 +172,7 @@ true                       {printf("%s",yytext); return T_TRUE; }
 void                       {printf("%s",yytext); return T_VOID; }
 while                      {printf("%s",yytext); return T_WHILE; }
 [a-zA-Z\_][a-zA-Z\_0-9]*   { printf("%s",yytext); yylval.sval = new string(yytext); return T_ID; } /* note that identifier pattern must be after all keywords */
-[\t\r\n\a\v\b ]+           {printf("%s",yytext);} //iprocess_ws(); /* ignore whitespace */
+[\t\r\n\a\v\b ]+           {printf("%s",yytext);process_ws();} /* ignore whitespace */
   /* 
    Error handling
    (be careful: error patterns should not match more input than a valid token)
