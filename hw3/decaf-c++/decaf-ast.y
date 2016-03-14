@@ -4,24 +4,27 @@
 #include <string>
 #include <cstdlib>
 #include "decafast-defs.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
+// #include "llvm/IR/Module.h"
+// #include "llvm/IR/IRBuilder.h"
+//#include "llvm/IR/LLVMContext.h"
 
+#include "Scope.h"
+//#include "llvm/Analysis/Verifier.h"
 
-#include "llvm/Analysis/Verifier.h"
-
-using namespace llvm;
+//using namespace llvm;
 
 int yylex(void);
 int yyerror(char *); 
 
 using namespace std;
+using namespace SCOPE
+// Head Scope 
+Scope Global = new Scope();
 
 // print AST?
 bool printAST = true;
-static Module *TheModule;
-static IRBuilder<> Builder(getGlobalContext());
+//static Module *TheModule;
+//static IRBuilder<> Builder(getGlobalContext());
 
 #include "decaf-ast.cc"
 
@@ -63,7 +66,10 @@ start: program
 
 program: extern_list decafclass
     { 
-        ProgramAST *prog = new ProgramAST((decafStmtList *)$1, (ClassAST *)$2); 
+        ProgramAST *prog = new ProgramAST((decafStmtList *)$1, (ClassAST *)$2);
+		Symbol symbol_table = new symbol_table();
+                Scope  global  = new Scope(); 
+                global->_symbolTable=symbole_table;
 		if (printAST) {
 			cout << getString(prog) << endl;
 		}
@@ -99,7 +105,7 @@ extern_type: T_STRINGTYPE
     ;
 
 decafclass: T_CLASS T_ID T_LCB field_decl_list method_decl_list T_RCB
-    { $$ = new ClassAST(*$2, (FieldDeclListAST *)$4, (decafStmtList *)$5); delete $2; }
+    { $$ = new ClassAST(*$2, (FieldDeclListAST *)$4, (decafStmtList *)$5);delete $2;}
     | T_CLASS T_ID T_LCB field_decl_list T_RCB
     { $$ = new ClassAST(*$2, (FieldDeclListAST *)$4, new decafStmtList()); delete $2; }
     ;
@@ -162,7 +168,7 @@ param_comma_list: type T_ID T_COMMA param_comma_list
     ;
 
 type: T_INTTYPE
-    { $$ = intTy; }
+    { $$ = intTy;}
     | T_BOOLTYPE
     { $$ = boolTy; }
     ;
@@ -226,7 +232,7 @@ statement: assign T_SEMICOLON
     ;
 
 assign: T_ID T_ASSIGN expr
-    { $$ = new AssignVarAST(*$1, $3); delete $1; }
+    { $$ = new AssignVarAST(*$1, $3); delete $1; printf(" //decl at line %i",lineno); }
     | T_ID T_LSB expr T_RSB T_ASSIGN expr
     { $$ = new AssignArrayLocAST(*$1, $3, $6); delete $1; }
     ;
@@ -323,8 +329,8 @@ bool_constant: T_TRUE
 
 int main() {
   // Intialize LLVM module 
-  LLVMContext &Context = getGlobalContext();
-  TheModule = new Module("?",Context);
+  //LLVMContext &Context = getGlobalContext();
+  //TheModule = new Module("?",Context);
   // parse the input and create the abstract syntax tree
   int retval = yyparse();
   return(retval >= 1 ? 1 : 0);
