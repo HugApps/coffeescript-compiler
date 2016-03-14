@@ -71,7 +71,7 @@ program: extern_list decafclass
         
        
 		if (printAST) {
-			cout << getString(prog) << endl;
+			//cout << getString(prog) << endl;
 		}
         delete prog;
     }

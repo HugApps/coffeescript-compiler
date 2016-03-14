@@ -286,6 +286,7 @@ public:
 };
 
 /// AssignVarAST - assign value to a variable
+/// Should insert variable value, key into current symbol table
 class AssignVarAST : public decafAST {
 	string Name; // location to assign value
 	decafAST *Value;
@@ -432,7 +433,8 @@ public:
 	string str() { return buildString4("Method", Name, TyString(ReturnType), FunctionArgs, Block); }
 };
 
-/// AssignGlobalVarAST - assign value to a global variable
+/// AssignGlobalVarAST - assign value to a global variablei
+/// Add Variable to symbol table of root scope
 class AssignGlobalVarAST : public decafAST {
 	decafType Ty;
 	string Name; // location to assign value
@@ -526,6 +528,7 @@ public:
 };
 
 /// ProgramAST - the decaf program
+/// Creates the roote scope and global symbol table
 class ProgramAST : public decafAST {
 	decafStmtList *ExternList;
 	ClassAST *ClassDef;
