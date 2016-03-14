@@ -123,56 +123,56 @@ notstresc \\[^\'\"tvrnafb\\]
   /*
     Pattern definitions for all tokens 
   */
-&&                         { return T_AND; }
-=                          { return T_ASSIGN; }
-bool                       { return T_BOOLTYPE; }
-break                      { return T_BREAK; }
-('{chars}')|('{charesc}')  { yylval.number = get_charconstant(yytext); return T_CHARCONSTANT; }
-class                      { return T_CLASS; }
-,                          { return T_COMMA; }
+&&                         { printf("%s",yytext); return T_AND; }
+=                          { printf("%s",yytext); return T_ASSIGN; }
+bool                       { printf("%s",yytext); return T_BOOLTYPE; }
+break                      { printf("%s",yytext); return T_BREAK; }
+('{chars}')|('{charesc}')  {printf("%s",yytext); yylval.number = get_charconstant(yytext); return T_CHARCONSTANT; }
+class                      {printf("%s",yytext); yylval.sval =process_string(yytext); return T_CLASS; }
+,                          {printf("%s",yytext); return T_COMMA; }
 \/\/[^\n]*\n               { process_ws(); } /* ignore comments */
-continue                   { return T_CONTINUE; }
-\/                         { return T_DIV; }
-\.                         { return T_DOT; }
- else                      { return T_ELSE; }
-==                         { return T_EQ; }
-extends                    { return T_EXTENDS; }
-extern                     { return T_EXTERN; }
-false                      { return T_FALSE; }
-for                        { return T_FOR; }
->=                         { return T_GEQ; }
->                          { return T_GT; }
-if                         { return T_IF; }
-(0x[0-9a-fA-F]+)|([0-9]+)  { yylval.number = get_intconstant(yytext); return T_INTCONSTANT; }
-int                        { return T_INTTYPE; }
-\{                         { return T_LCB; }
-\<\<                       { return T_LEFTSHIFT; }
-\<=                        { return T_LEQ; }
-\(                         { return T_LPAREN; }
-\[                         { return T_LSB; }
-\<                         { return T_LT; }
--                          { return T_MINUS; }
-\%                         { return T_MOD; }
-\*                         { return T_MULT; }
-!=                         { return T_NEQ; }
-new                        { return T_NEW; }
-!                          { return T_NOT; }
-null                       { return T_NULL; }
-\|\|                       { return T_OR; }
-\+                         { return T_PLUS; }
-\}                         { return T_RCB; }
-return                     { return T_RETURN; }
->>                         { return T_RIGHTSHIFT; }
-\)                         { return T_RPAREN; }
-\]                         { return T_RSB; }
-\;                         { return T_SEMICOLON; }
-string                     { return T_STRINGTYPE; }
-\"([^\n\"\\]*{stresc}?)*\" { yylval.sval = process_string(yytext); return T_STRINGCONSTANT; }
-true                       { return T_TRUE; }
-void                       { return T_VOID; }
-while                      { return T_WHILE; }
-[a-zA-Z\_][a-zA-Z\_0-9]*   { yylval.sval = new string(yytext); return T_ID; } /* note that identifier pattern must be after all keywords */
-[\t\r\n\a\v\b ]+           { process_ws(); } /* ignore whitespace */
+continue                   {printf("%s",yytext); return T_CONTINUE; }
+\/                         {printf("%s",yytext); return T_DIV; }
+\.                         {printf("%s",yytext); return T_DOT; }
+ else                      {printf("%s",yytext); return T_ELSE; }
+==                         {printf("%s",yytext); return T_EQ; }
+extends                    {printf("%s",yytext); return T_EXTENDS; }
+extern                     {printf("%s",yytext); return T_EXTERN; }
+false                      {printf("%s",yytext); return T_FALSE; }
+for                        {printf("%s",yytext); return T_FOR; }
+>=                         {printf("%s",yytext); return T_GEQ; }
+>                          {printf("%s",yytext); return T_GT; }
+if                         {printf("%s",yytext); return T_IF; }
+(0x[0-9a-fA-F]+)|([0-9]+)  {printf("%s",yytext); yylval.number = get_intconstant(yytext); return T_INTCONSTANT; }
+int                        {printf("%s",yytext); return T_INTTYPE; }
+\{                         {printf("%s",yytext); return T_LCB; }
+\<\<                       {printf("%s",yytext); return T_LEFTSHIFT; }
+\<=                        {printf("%s",yytext); return T_LEQ; }
+\(                         {printf("%s",yytext); return T_LPAREN; }
+\[                         {printf("%s",yytext); return T_LSB; }
+\<                         {printf("%s",yytext); return T_LT; }
+-                          {printf("%s",yytext); return T_MINUS; }
+\%                         {printf("%s",yytext); return T_MOD; }
+\*                         {printf("%s",yytext); return T_MULT; }
+!=                         {printf("%s",yytext); return T_NEQ; }
+new                        {printf("%s",yytext); return T_NEW; }
+!                          {printf("%s",yytext); return T_NOT; }
+null                       {printf("%s",yytext); return T_NULL; }
+\|\|                       {printf("%s",yytext); return T_OR; }
+\+                         {printf("%s",yytext); return T_PLUS; }
+\}                         {printf("%s",yytext); return T_RCB; }
+return                     {printf("%s",yytext); return T_RETURN; }
+>>                         {printf("%s",yytext); return T_RIGHTSHIFT; }
+\)                         {printf("%s",yytext); return T_RPAREN; }
+\]                         {printf("%s",yytext); return T_RSB; }
+\;                         {printf("%s",yytext); return T_SEMICOLON; }
+string                     {printf("%s",yytext); return T_STRINGTYPE; }
+\"([^\n\"\\]*{stresc}?)*\" {printf("%s",yytext); yylval.sval = process_string(yytext); return T_STRINGCONSTANT; }
+true                       {printf("%s",yytext); return T_TRUE; }
+void                       {printf("%s",yytext); return T_VOID; }
+while                      {printf("%s",yytext); return T_WHILE; }
+[a-zA-Z\_][a-zA-Z\_0-9]*   { printf("%s",yytext); yylval.sval = new string(yytext); return T_ID; } /* note that identifier pattern must be after all keywords */
+[\t\r\n\a\v\b ]+           {printf("%s",yytext);} //iprocess_ws(); /* ignore whitespace */
   /* 
    Error handling
    (be careful: error patterns should not match more input than a valid token)
