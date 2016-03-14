@@ -17,9 +17,9 @@ int yylex(void);
 int yyerror(char *); 
 
 using namespace std;
-using namespace SCOPE
+
 // Head Scope 
-Scope Global = new Scope();
+
 
 // print AST?
 bool printAST = true;
@@ -67,9 +67,9 @@ start: program
 program: extern_list decafclass
     { 
         ProgramAST *prog = new ProgramAST((decafStmtList *)$1, (ClassAST *)$2);
-		Symbol symbol_table = new symbol_table();
-                Scope  global  = new Scope(); 
-                global->_symbolTable=symbole_table;
+	
+        
+       
 		if (printAST) {
 			cout << getString(prog) << endl;
 		}
