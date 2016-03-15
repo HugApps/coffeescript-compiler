@@ -128,7 +128,7 @@ notstresc \\[^\'\"tvrnafb\\]
 bool                       { printf("%s",yytext); return T_BOOLTYPE; }
 break                      { printf("%s",yytext); return T_BREAK; }
 ('{chars}')|('{charesc}')  {printf("%s",yytext); yylval.number = get_charconstant(yytext); return T_CHARCONSTANT; }
-class                      {printf("%s",yytext); yylval.sval =process_string(yytext); return T_CLASS; }
+class                      {printf("%s",yytext); yylval.sval = process_string(yytext); return T_CLASS; }
 ,                          {printf("%s",yytext); return T_COMMA; }
 \/\/[^\n]*\n               { process_ws(); } /* ignore comments */
 continue                   {printf("%s",yytext); return T_CONTINUE; }
