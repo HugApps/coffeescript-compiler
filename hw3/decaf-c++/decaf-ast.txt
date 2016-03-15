@@ -9,7 +9,8 @@
 #include "decaf-ast.tab.h"
 #endif
 
-using namespace std;
+using namespace std ;
+using namespace llvm;
 // Codegen builder and module
 static Module *TheModule;
 static IRBuilder<> Builder(getGlobalContext());
@@ -67,7 +68,7 @@ class decafAST {
 public:
   virtual ~decafAST() {}
   virtual string str() { return string(""); }
-  virtual Value *codegen() = 0 ; 
+  virtual Value *codegen() = 0 ;
 };
 
 string getString(decafAST *d) {
@@ -606,8 +607,8 @@ Value *BinaryExprAST::codegen() {
   default: return ErrorV("invalid binary operator");
 }
 
-// function to convert decafType to llvm Type	
-llvm::Type *getLLVMType(decafType ty) {
+// function to convert decafType to llvm Type
+ static llvm::Type *getLLVMType(decafType ty) {
  switch (ty) {
  	case voidTy: return Builder.getVoidTy();
  	case intTy: return Builder.getInt32Ty();
@@ -621,7 +622,7 @@ Type *ExternAST::codgen(){
 	return *getLLVMType(ReturnType);
 }
 
-llvm::Value *StringConstAST::Codegen() {
+ static llvm::Value *StringConstAST::Codegen() {
   const char *s = StringConst.c_str();
    llvm::Value *GS =
 		    Builder.CreateGlobalString(s, "globalstring");
@@ -630,12 +631,91 @@ llvm::Value *StringConstAST::Codegen() {
 
 
 Type *BooleanAST::codgen(){
-	
+
 //depends on implementation of string constant and boolean
 	return *getLLVMType(ReturnType);
 }
 
 
+// Declare a block of code
+llvm::Value*BlockAST::codegen(){
+    // BasicBlock is a Value type, used for branching, automatically execute statements in between, 1 = attach to parent block, 0 = at the end of the block
+    return llvm::BasicBlock::Create(getGlobalContext(),"BlockAST",1,0);
+
+}
+
+llvm::Value *MethodCallAST::Codegen(){
+    // Convert return type to llvm type
+
+	TypedSymbolListAST *FunctionArgs;
+	MethodBlockAST *Block;
+	// Before creating function declartion, we must check to see if its previously declared ,if null = brand new function
+	// if not null create function, otherwise check for body
+
+
+
+	Function *ExistingFunc = TheModule->getFunction(Name);
+	// Create new Function
+	if(!ExistingFunc){
+    llvm::Type newType = *getLLVMType(ReturnType);
+    // convert argument list to llvm typed list
+    std::vector<llvm::Type*> args;
+    FunctionType ft = get(newType,args,false);
+    Function *F - Function::Create(ft,Function::ExternalLinkage,Name,TheModule);
+
+	//Create a block for the function
+	llvm::BasicBlock *BB = BasicBlock::Create(getGlobalContext(),Name,F);
+	BUilder.SetInsertPoint(BB);
+
+	// Add all arguments into hash table - * awaiing final implementation for Hash table
+
+	// Add return value to block?
+
+	if (Value *newType = Body->codegen()){
+
+        Builder.CreateRet(newType);
+
+        return F;
+
+
+	}
+
+	// If error
+
+	F->eraseFromParent();
+	return null;
+
+
+
+
+        }
+
+    // Create a constant funct , pass in function name, argument list and return type
+
+
+
+
+}
+
+llvm::Value *AssignVarAST::codegen(){
+/*
+Check if variable is declared in current scope table.
+
+    if( Hash table has variable already declared){
+         P8 :Create Variable with address location + assign the new value}
+         P2: Print out line number of where its first declared
+    else if(recursively check previous scope for declaration, use declaration from scope that its decalred) {
+
+        P8:Create Variable with address location + value from global
+        P2: Print out line number of where its first declared
+        }
+
+    if( Hash tables does not contain declaration ){
+       throw error;}
+
+
+
+}
 
 
 }
@@ -650,22 +730,8 @@ Type *BooleanAST::codgen(){
 	switch(op){
 
 		case 1: return Builder.CreateAnd(LHS,RHS,"&&");
-		case 0: 
+		case 0:
 }
 
 
-value MethodCallAST::codegen(){
-	// Use library function to return function stored in hash table 
-	//}
-
-// function calls
-// function definitions
-//externs
-// method call
-//method types
-// method declarations
-//program
-//block
-//arith operations
-
-
+v
