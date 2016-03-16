@@ -127,7 +127,7 @@ notstresc \\[^\'\"tvrnafb\\]
 =                          { printf("%s",yytext); return T_ASSIGN; }
 bool                       { printf("%s",yytext); return T_BOOLTYPE; }
 break                      { printf("%s",yytext); return T_BREAK; }
-('{chars}')|('{charesc}')  {printf("%s",yytext); yylval.number = get_charconstant(yytext); return T_CHARCONSTANT; }
+('{chars}')|('{charesc}')  {printf("%s",yytext); yylval.sval = new string(yytext); return T_CHARCONSTANT; }
 class                      {printf("%s",yytext); yylval.sval = process_string(yytext); return T_CLASS; }
 ,                          {printf("%s",yytext); return T_COMMA; }
 \/\/[^\n]*\n               { process_ws(); } /* ignore comments */
@@ -143,7 +143,7 @@ for                        {printf("%s",yytext); return T_FOR; }
 >=                         {printf("%s",yytext); return T_GEQ; }
 >                          {printf("%s",yytext); return T_GT; }
 if                         {printf("%s",yytext); return T_IF; }
-(0x[0-9a-fA-F]+)|([0-9]+)  {printf("%s",yytext); yylval.number = get_intconstant(yytext); return T_INTCONSTANT; }
+(0x[0-9a-fA-F]+)|([0-9]+)  {printf("%s",yytext); yylval.sval = new string(yytext); return T_INTCONSTANT; }
 int                        {printf("%s",yytext); return T_INTTYPE; }
 \{                         {printf("%s",yytext); return T_LCB; }
 \<\<                       {printf("%s",yytext); return T_LEFTSHIFT; }

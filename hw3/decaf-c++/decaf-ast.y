@@ -24,7 +24,6 @@ Node* root = NULL;
 %union{
     class Node* node;
     std::string* sval;
-    int number;
     int decaftype;
  }
 
@@ -34,8 +33,7 @@ Node* root = NULL;
 %token T_VOID T_WHILE T_WHITESPACE
 %token T_INTTYPE T_BOOLTYPE
 
-%token <number> T_CHARCONSTANT T_INTCONSTANT T_FALSE T_TRUE
-%token <sval> T_ID T_STRINGCONSTANT
+%token <sval> T_ID T_STRINGCONSTANT T_CHARCONSTANT T_INTCONSTANT T_FALSE T_TRUE
 
 %type <node> type method_type extern_type
 %type <node> rvalue expr constant bool_constant method_call method_arg method_arg_list assign assign_comma_list
@@ -57,9 +55,11 @@ start: program
 
 program: extern_list decafclass
     {
-    	root = new Node(PROGRAM);
+    	root = new ProgramNode();
         root->addChild($1);       	
         root->addChild($2);
+
+	printf("%s\n", root->toString().c_str());
     }
 
 extern_list: extern_list extern_defn
@@ -69,9 +69,9 @@ extern_list: extern_list extern_defn
     ;
 
 extern_defn: T_EXTERN method_type T_ID T_LPAREN extern_type_list T_RPAREN T_SEMICOLON
-    { $$ = new Node(EXTERN); $$->addChild($2); $$->addChild(new Node(ID, $3)); $$->addChild($5); }
+    { $$ = new ExternNode(); $$->addChild($2); $$->addChild(new Node(ID, $3)); $$->addChild($5); }
     | T_EXTERN method_type T_ID T_LPAREN T_RPAREN T_SEMICOLON
-    { $$ = new Node(EXTERN); $$->addChild($2); $$->addChild(new Node(ID, $3)); }
+    { $$ = new ExternNode(); $$->addChild($2); $$->addChild(new Node(ID, $3)); }
     ;
 
 extern_type_list: extern_type
@@ -87,9 +87,9 @@ extern_type: T_STRINGTYPE
     ;
 
 decafclass: T_CLASS T_ID T_LCB field_decl_list method_decl_list T_RCB
-    { $$ = new Node(CLASS); $$->addChild(new Node(ID, $2)); $$->addChild($4); $$->addChild($5); }
+    { $$ = new ClassNode(); $$->addChild(new Node(ID, $2)); $$->addChild($4); $$->addChild($5); }
     | T_CLASS T_ID T_LCB field_decl_list T_RCB
-    { $$ = new Node(CLASS); $$->addChild(new Node(ID, $2)); $$->addChild($4); }
+    { $$ = new ClassNode(); $$->addChild(new Node(ID, $2)); $$->addChild($4); }
     ;
 
 field_decl_list: field_decl_list field_decl
@@ -101,21 +101,21 @@ field_decl_list: field_decl_list field_decl
 field_decl: field_list T_SEMICOLON
     { $$ = $1; }
     | type T_ID T_ASSIGN constant T_SEMICOLON
-    { $$ = new Node(FIELD_DECL); $$->addChild($1); $$->addChild(new Node(ID, $2)); $$->addChild($4); }
+    { $$ = new FieldDeclNode(lineno); $$->addChild($1); $$->addChild(new Node(ID, $2)); $$->addChild($4); }
     ;
 
 field_list: field_list T_COMMA T_ID
-    { $$ = new Node(); $$->addChild($1);  $$->addChild(new Node(ID, $3));}
+    { $$ = new Node(FIELD_DECL, lineno); $$->addChild($1);  $$->addChild(new Node(ID, $3));}
     | field_list T_COMMA T_ID T_LSB T_INTCONSTANT T_RSB
     { 
     	$$ = new Node(); $$->addChild($1); 
-    	Node* node = new Node(FIELD_DECL_ARRAY); $$->addChild(new Node(ID, $3)); $$->addChild(new Node(CONSTANT, $5));
+    	Node* node = new Node(FIELD_DECL_ARRAY, lineno); $$->addChild(new Node(ID, $3)); $$->addChild(new Node(CONSTANT, $5));
     	$$->addChild(node);
     }
     | type T_ID
-    { $$ = new Node(FIELD_DECL); $$->addChild($1); $$->addChild(new Node(ID, $2)); }
+    { $$ = new Node(FIELD_DECL, lineno); $$->addChild($1); $$->addChild(new Node(ID, $2)); }
     | type T_ID T_LSB T_INTCONSTANT T_RSB
-    { $$ = new Node(FIELD_DECL_ARRAY); $$->addChild($1); $$->addChild(new Node(ID, $2)); $$->addChild(new Node(CONSTANT, $4));}
+    { $$ = new Node(FIELD_DECL_ARRAY, lineno); $$->addChild($1); $$->addChild(new Node(ID, $2)); $$->addChild(new Node(CONSTANT, $4));}
     ;
 
 method_decl_list: method_decl_list method_decl
@@ -125,9 +125,9 @@ method_decl_list: method_decl_list method_decl
     ;
 
 method_decl: T_VOID T_ID T_LPAREN param_list T_RPAREN method_block
-    { $$ = new Node(METHOD_DECL); $$->addChild(new Node(TYPE, "void")); $$->addChild(new Node(ID, $2)); $$->addChild($4); $$->addChild($6);  }
+    { $$ = new MethodDeclNode(); $$->addChild(new Node(TYPE, "void")); $$->addChild(new Node(ID, $2)); $$->addChild($4); $$->addChild($6);  }
     | type T_ID T_LPAREN param_list T_RPAREN method_block
-    { $$ = new Node(METHOD_DECL); $$->addChild($1); $$->addChild(new Node(ID, $2)); $$->addChild($4); $$->addChild($6); }
+    { $$ = new MethodDeclNode(); $$->addChild($1); $$->addChild(new Node(ID, $2)); $$->addChild($4); $$->addChild($6); }
     ;
 
 method_type: T_VOID
@@ -143,9 +143,9 @@ param_list: param_comma_list
     ;
 
 param_comma_list: type T_ID T_COMMA param_comma_list
-    { $$ = new Node(); Node* node = new Node(PARAM); node->addChild($1); node->addChild(new Node(ID, $2)); $$->addChild(node); $$->addChild($4);}
+    { $$ = new Node(); Node* node = new Node(PARAM, lineno); node->addChild($1); node->addChild(new Node(ID, $2)); $$->addChild(node); $$->addChild($4);}
     | type T_ID
-    { $$ = new Node(PARAM); $$->addChild($1); $$->addChild(new Node(ID, $2)); }
+    { $$ = new Node(PARAM, lineno); $$->addChild($1); $$->addChild(new Node(ID, $2)); }
     ;
 
 type: T_INTTYPE
@@ -296,9 +296,9 @@ constant: T_INTCONSTANT
     ;
 
 bool_constant: T_TRUE
-    { $$ = new Node(CONSTANT, $1); }
+    { $$ = new Node(CONSTANT, "true"); }
     | T_FALSE
-    { $$ = new Node(CONSTANT, $1); }
+    { $$ = new Node(CONSTANT, "false"); }
     ;
 
 %%
