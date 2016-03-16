@@ -713,8 +713,6 @@ Check if variable is declared in current scope table.
     if( Hash tables does not contain declaration ){
        throw error;}
 
-
-
 }
 
 
@@ -722,16 +720,26 @@ Check if variable is declared in current scope table.
 
 
 /*
-
-
 // binary operation:
  value ExpAST::codegen(){
-        Value*e
+          Value *L = LHS->codegen();
+          Value *R = RHS->codegen();	
+           if (L == 0 || R == 0) return 0;
 	switch(op){
-
-		case 1: return Builder.CreateAnd(LHS,RHS,"&&");
-		case 0:
+		case '&&': return Builder.CreateAnd(L,R,"&&");
+		case '||': return Builder.CreateOr(L,R,"||");
+                case '==': return Builder.CreateEqual(L,R,"==");
+                case '!=': return Builder.CreateNotEqual(L,R,"!=");
+                case '<':  return Builder.CreateCmpULT(L,R,"<");
+                case '>':  return Builder.CreateCmpUGT(L,R,">");
+                case '<=': return Builder.CreateCmpULTE(L,R,"<=");
+                case '>=': return Builder.CreateCmpUGTE(L,R,">=");
+                case '+':  return Builder.CreateAdd(L,R,"+");
+		case '-':  return Builder.CreateSub(L,R,"-");
+		case '*':  return Builder.CreateMul(L,R,"*");
+		case '/':  return Builder.CreateDiv(L,R,"/");
+		case '<<':  return Builder.CreateLF(L,R,"<<");
+		case '>>':  return Builder.CreateRF(L,R,">>");
+		case '%':  return Builder.CreateMod(L,R,"%");
 }
 
-
-v
