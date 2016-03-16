@@ -598,14 +598,14 @@ Value *BinaryExprAST::codegen() {
   if (L == 0 || R == 0) return 0;
 
   switch (Op) {
-  case '+': return Builder.CreateFAdd(L, R, "addtmp"); break; 
-  case '-': return Builder.CreateFSub(L, R, "subtmp"); break; 
-  case '*': return Builder.CreateFMul(L, R, "multmp"); break; 
-  case '/': return BUilder.CreateFDiv(L, R, "divtmp"); break; 
-  case '%': return Builder.CreateFMod(L,R,"modtmp");   break; 
+  case '+': return Builder.CreateFAdd(L, R, "addtmp"); break;
+  case '-': return Builder.CreateFSub(L, R, "subtmp"); break;
+  case '*': return Builder.CreateFMul(L, R, "multmp"); break;
+  case '/': return BUilder.CreateFDiv(L, R, "divtmp"); break;
+  case '%': return Builder.CreateFMod(L,R,"modtmp");   break;
 
-  case '<<':  return Builder.CreateShl(L,R,"<<");break; 
-  case '>>':  return Builder.CreateShr(L,R,">>");break; 
+  case '<<':  return Builder.CreateShl(L,R,"<<");break;
+  case '>>':  return Builder.CreateShr(L,R,">>");break;
 
   case '<':
     L = Builder.CreateFCmpULT(L, R, "cmptmp");
@@ -613,7 +613,7 @@ Value *BinaryExprAST::codegen() {
     return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
                                 "booltmp");
     break;
-  case '<=': 
+  case '<=':
     L=Builder.CreateCmpULTE(L,R,"cmptmp");
      // Convert bool 0/1 to double 0.0 or 1.0
     return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
@@ -624,31 +624,31 @@ Value *BinaryExprAST::codegen() {
     // Convert bool 0/1 to double 0.0 or 1.0
     return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
                                 "booltmp");
-  case '>=': 
+  case '>=':
     L=Builder.CreateCmpUGE(L,R,"cmptmp");
      // Convert bool 0/1 to double 0.0 or 1.0
     return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
                                 "booltmp");
       break;
-  case '==': 
+  case '==':
     L = Builder.CreateFCmpUEQ(L, R, "cmptmp");
     // Convert bool 0/1 to double 0.0 or 1.0
     return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
                                 "booltmp");
       break;
-  case '!=': 
+  case '!=':
       L = Builder.CreateFCmpUNE(L, R, "cmptmp");
     // Convert bool 0/1 to double 0.0 or 1.0
     return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
                                 "booltmp");
       break;
-  case '&&': 
+  case '&&':
       L=Builder.CreateAnd(L,R,"andtmp");
      // Convert bool 0/1 to double 0.0 or 1.0
     return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
                                 "booltmp");
 
-  case '||': 
+  case '||':
       L=Builder.CreateOr(L,R,"ortmp");
      // Convert bool 0/1 to double 0.0 or 1.0
     return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
@@ -668,6 +668,9 @@ Value *BinaryExprAST::codegen() {
   default: return ErrorV("invalid binary operator");
 }
 
+
+
+
 // function to convert decafType to llvm Type
  static llvm::Type *getLLVMType(decafType ty) {
  switch (ty) {
@@ -678,10 +681,15 @@ Value *BinaryExprAST::codegen() {
   default: throw runtime_error("unknown type");
  }
 
-Type *ExternAST::codgen(){
+
+
+llvm::Value Type *ExternAST::codgen(){
 
 	return *getLLVMType(ReturnType);
 }
+
+
+
 
  static llvm::Value *StringConstAST::Codegen() {
   const char *s = StringConst.c_str();
@@ -691,11 +699,12 @@ Type *ExternAST::codgen(){
 }
 
 
-Type *BooleanAST::codgen(){
+llvm::Type *BooleanAST::codgen(){
 
 //depends on implementation of string constant and boolean
 	return *getLLVMType(ReturnType);
 }
+
 
 
 // Declare a block of code
@@ -705,7 +714,50 @@ llvm::Value*BlockAST::codegen(){
 
 }
 
-llvm::Value *MethodCallAST::Codegen(){
+
+
+
+// Does methodcall using llvm when methodcall AST is created
+llvm:Value *MethodCallAST::codegen(){
+
+    // Check Module hash table to see if function is already declared
+    Function *ExistingFunc = TheModule->getFunction(Name);
+    // If not declared throw error
+    if(!ExistingFunc){
+
+        return ErrorV("Function is undeclared");
+    }
+    // if argument numbers are not accurate  throw error
+        if(ExistingFunc->args_size() !=args.size()){
+
+            return ErrorV("Error: does not contain the required arguments");
+
+
+
+
+    }
+    // Handle arguments passed in
+    std::vector<Value *> Params;
+    // Code from llvm.org tutorial to handle pararamters
+
+    for (unsigned i = 0, e = Params.size(); i !=e; ++i){
+
+        Params.push_back(Params[i]->codegen());
+            if (!Params.back())
+                return nullptr;
+
+
+    }
+    // Create the function call
+    return Builder.CreateCall(ExistingFunc,Params,"calltemp");
+
+
+
+
+
+}
+// codgen for function declaration
+llvm::Value *MethodDeclCAST::Codegen(){
     // Convert return type to llvm type
 
 	TypedSymbolListAST *FunctionArgs;
@@ -751,12 +803,21 @@ llvm::Value *MethodCallAST::Codegen(){
 
         }
 
-    // Create a constant funct , pass in function name, argument list and return type
 
 
 
 
 }
+//Codegen for return statemetn
+llvm::Value *ReturnStmtAST::codegen(){
+    // Should return the codegen of whatever is created inside that value , expr
+    // Not sure if should handle blocks and scopes
+    return Value::codegen();
+    //
+}
+
+
+// Codegen for variable assignment
 
 llvm::Value *AssignVarAST::codegen(){
 /*
