@@ -837,6 +837,38 @@ Check if variable is declared in current scope table.
 
 }
 
+Value *NumberExprAST::codegen() {
+
+	return constantFP::get(getGlobalContext(),APfloat(val));
+}
+
+static llvm::Constant *StringConstAST::Codegen() {
+	//contents taken from LLVM cheat sheet
+  const char *s = StringConst.c_str();
+   llvm::Value *GS =
+		    Builder.CreateGlobalString(s, "globalstring");
+  return Builder.CreateConstGEP2_32(GS, 0, 0, "cast");
+}
+
+static llvm::Constant *CharConstAST::Codegen() {
+  const char c = CharConst;//needs to be whichever var is in the 'CharConst' class - may not need that c_str function since its just referencing a char
+   llvm::Value *GS =
+		    Builder.CreateGlobalString(c, "globalcharacter");
+  return Builder.CreateConstGEP2_32(GS, 0, 0, "cast");//not sure what this is doing, or if the vars need to be changed 
+}
+
+/*Might not need this since numberexprast is doing the same. Keeping this for reference.
+static llvm::ConstantInt *IntConstAST::Codegen() {
+  return Builder.getInt32(intValue);//needs to get passsed in the local value found in IntConstAST...
+  //IRBuilder::getInt32 returns a ConstantInt
+}*/
+
+
+static llvm::Constant *BoolExprAST::codgen(){
+	return Builder.getInt1(Val);
+	//IRBuilder::getInt1 returns a ConstantInt, but we can use Constant as per her LLVM cheatsheet
+}
+
 
 }
 
