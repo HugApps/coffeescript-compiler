@@ -4,42 +4,40 @@
 #include <string>
 #include <cstdlib>
 #include "decafast-defs.h"
-#include "ast.cpp"
-
 
 int yylex(void);
-int yyerror(char *);
+int yyerror(char *); 
 
 using namespace std;
-using namespace AST;
 
-// Head Scope
-
-
+// print AST?
 bool printAST = true;
-Node* root = NULL;
+
+#include "decaf-ast.cc"
 
 %}
 
 %union{
-    class Node* node;
-    std::string* sval;
+    class decafAST *ast;
+    std::string *sval;
+    int number;
     int decaftype;
  }
 
-%token T_AND T_ASSIGN T_BREAK T_CLASS T_COMMENT T_COMMA T_CONTINUE T_DIV T_DOT T_ELSE T_EQ T_EXTENDS T_EXTERN
-%token T_FOR T_GEQ T_GT T_IF T_LCB T_LEFTSHIFT T_LEQ T_LPAREN T_LSB T_LT T_MINUS T_MOD T_MULT T_NEQ T_NEW T_NOT
+%token T_AND T_ASSIGN T_BREAK T_CLASS T_COMMENT T_COMMA T_CONTINUE T_DIV T_DOT T_ELSE T_EQ T_EXTENDS T_EXTERN 
+%token T_FOR T_GEQ T_GT T_IF T_LCB T_LEFTSHIFT T_LEQ T_LPAREN T_LSB T_LT T_MINUS T_MOD T_MULT T_NEQ T_NEW T_NOT 
 %token T_NULL T_OR T_PLUS T_RCB T_RETURN T_RIGHTSHIFT T_RPAREN T_RSB T_SEMICOLON T_STRINGTYPE
 %token T_VOID T_WHILE T_WHITESPACE
 %token T_INTTYPE T_BOOLTYPE
 
-%token <sval> T_ID T_STRINGCONSTANT T_CHARCONSTANT T_INTCONSTANT T_FALSE T_TRUE
+%token <number> T_CHARCONSTANT T_INTCONSTANT T_FALSE T_TRUE 
+%token <sval> T_ID T_STRINGCONSTANT
 
-%type <node> type method_type extern_type
-%type <node> rvalue expr constant bool_constant method_call method_arg method_arg_list assign assign_comma_list
-%type <node> block method_block statement statement_list var_decl_list var_decl var_list param_list param_comma_list
-%type <node> method_decl method_decl_list field_decl_list field_decl field_list extern_type_list extern_defn
-%type <node> extern_list decafclass
+%type <decaftype> type method_type extern_type
+%type <ast> rvalue expr constant bool_constant method_call method_arg method_arg_list assign assign_comma_list
+%type <ast> block method_block statement statement_list var_decl_list var_decl var_list param_list param_comma_list 
+%type <ast> method_decl method_decl_list field_decl_list field_decl field_list extern_type_list extern_defn
+%type <ast> extern_list decafclass
 
 %left T_OR
 %left T_AND
@@ -54,84 +52,84 @@ Node* root = NULL;
 start: program
 
 program: extern_list decafclass
-    {
-    	root = new ProgramNode();
-        root->addChild($1);       	
-        root->addChild($2);
-
-	printf("%s\n", root->toString().c_str());
+    { 
+        ProgramAST *prog = new ProgramAST((decafStmtList *)$1, (ClassAST *)$2); 
+		if (printAST) {
+			cout << getString(prog) << endl;
+		}
+        delete prog;
     }
 
 extern_list: extern_list extern_defn
-    { $$ = new Node(); $$->addChild($1); $$->addChild($2); }
+    { decafStmtList *slist = (decafStmtList *)$1; slist->push_back($2); $$ = slist; }
     | /* extern_list can be empty */
-    { $$ = NULL; }
+    { decafStmtList *slist = new decafStmtList(); $$ = slist; }
     ;
 
 extern_defn: T_EXTERN method_type T_ID T_LPAREN extern_type_list T_RPAREN T_SEMICOLON
-    { $$ = new ExternNode(); $$->addChild($2); $$->addChild(new Node(ID, $3)); $$->addChild($5); }
+    { $$ = new ExternAST((decafType)$2, *$3, (TypedSymbolListAST *)$5); delete $3; }
     | T_EXTERN method_type T_ID T_LPAREN T_RPAREN T_SEMICOLON
-    { $$ = new ExternNode(); $$->addChild($2); $$->addChild(new Node(ID, $3)); }
+    { $$ = new ExternAST((decafType)$2, *$3, NULL); delete $3; }
     ;
 
 extern_type_list: extern_type
-    { $$ = $1; }
+    { $$ = new TypedSymbolListAST(string(""), (decafType)$1); }
     | extern_type T_COMMA extern_type_list
-    { $$ = new Node(); $$->addChild($1); $$->addChild($3); }
+    { 
+        TypedSymbolListAST *tlist = (TypedSymbolListAST *)$3; 
+        tlist->push_front(string(""), (decafType)$1); 
+        $$ = tlist;
+    }
     ;
 
 extern_type: T_STRINGTYPE
-    { $$ = new Node(TYPE, "string"); }
+    { $$ = stringTy; }
     | type
     { $$ = $1; }
     ;
 
 decafclass: T_CLASS T_ID T_LCB field_decl_list method_decl_list T_RCB
-    { $$ = new ClassNode(); $$->addChild(new Node(ID, $2)); $$->addChild($4); $$->addChild($5); }
+    { $$ = new ClassAST(*$2, (FieldDeclListAST *)$4, (decafStmtList *)$5); delete $2; }
     | T_CLASS T_ID T_LCB field_decl_list T_RCB
-    { $$ = new ClassNode(); $$->addChild(new Node(ID, $2)); $$->addChild($4); }
+    { $$ = new ClassAST(*$2, (FieldDeclListAST *)$4, new decafStmtList()); delete $2; }
     ;
 
 field_decl_list: field_decl_list field_decl
-    { $$ = new Node(); $$->addChild($1); $$->addChild($2); }
+    { decafStmtList *slist = (decafStmtList *)$1; slist->push_back($2); $$ = slist; }
     | /* empty */
-    { $$ = NULL; }
+    { decafStmtList *slist = new decafStmtList(); $$ = slist; }
     ;
 
 field_decl: field_list T_SEMICOLON
     { $$ = $1; }
     | type T_ID T_ASSIGN constant T_SEMICOLON
-    { $$ = new FieldDeclNode(lineno); $$->addChild($1); $$->addChild(new Node(ID, $2)); $$->addChild($4); }
+    { $$ = new AssignGlobalVarAST((decafType)$1, *$2, $4); delete $2; }
     ;
 
 field_list: field_list T_COMMA T_ID
-    { $$ = new Node(FIELD_DECL, lineno); $$->addChild($1);  $$->addChild(new Node(ID, $3));}
+    { FieldDeclListAST *flist = (FieldDeclListAST *)$1; flist->new_sym(*$3, -1); $$ = flist; delete $3; }
     | field_list T_COMMA T_ID T_LSB T_INTCONSTANT T_RSB
-    { 
-    	$$ = new Node(); $$->addChild($1); 
-    	Node* node = new Node(FIELD_DECL_ARRAY, lineno); $$->addChild(new Node(ID, $3)); $$->addChild(new Node(CONSTANT, $5));
-    	$$->addChild(node);
-    }
+    { FieldDeclListAST *flist = (FieldDeclListAST *)$1; flist->new_sym(*$3, $5); $$ = flist; delete $3; }
     | type T_ID
-    { $$ = new Node(FIELD_DECL, lineno); $$->addChild($1); $$->addChild(new Node(ID, $2)); }
+    { $$ = new FieldDeclListAST(*$2, (decafType)$1, -1); delete $2; }
     | type T_ID T_LSB T_INTCONSTANT T_RSB
-    { $$ = new Node(FIELD_DECL_ARRAY, lineno); $$->addChild($1); $$->addChild(new Node(ID, $2)); $$->addChild(new Node(CONSTANT, $4));}
+    { $$ = new FieldDeclListAST(*$2, (decafType)$1, $4); delete $2; }
     ;
 
-method_decl_list: method_decl_list method_decl
-    { $$ = new Node(); $$->addChild($1); $$->addChild($2); }
+method_decl_list: method_decl_list method_decl 
+    { decafStmtList *slist = (decafStmtList *)$1; slist->push_back($2); $$ = slist; }
     | method_decl
-    { $$ = $1; }
+    { decafStmtList *slist = new decafStmtList(); slist->push_back($1); $$ = slist; }
     ;
 
 method_decl: T_VOID T_ID T_LPAREN param_list T_RPAREN method_block
-    { $$ = new MethodDeclNode(); $$->addChild(new Node(TYPE, "void")); $$->addChild(new Node(ID, $2)); $$->addChild($4); $$->addChild($6);  }
+    { $$ = new MethodDeclAST(voidTy, *$2, (TypedSymbolListAST *)$4, (MethodBlockAST *)$6); delete $2; }
     | type T_ID T_LPAREN param_list T_RPAREN method_block
-    { $$ = new MethodDeclNode(); $$->addChild($1); $$->addChild(new Node(ID, $2)); $$->addChild($4); $$->addChild($6); }
+    { $$ = new MethodDeclAST((decafType)$1, *$2, (TypedSymbolListAST *)$4, (MethodBlockAST *)$6); delete $2; }
     ;
 
 method_type: T_VOID
-    { $$ = new Node(TYPE, "void"); }
+    { $$ = voidTy; }
     | type
     { $$ = $1; }
     ;
@@ -143,42 +141,52 @@ param_list: param_comma_list
     ;
 
 param_comma_list: type T_ID T_COMMA param_comma_list
-    { $$ = new Node(); Node* node = new Node(PARAM, lineno); node->addChild($1); node->addChild(new Node(ID, $2)); $$->addChild(node); $$->addChild($4);}
+    { 
+        TypedSymbolListAST *tlist = (TypedSymbolListAST *)$4; 
+        tlist->push_front(*$2, (decafType)$1); 
+        $$ = tlist;
+        delete $2;
+    }
     | type T_ID
-    { $$ = new Node(PARAM, lineno); $$->addChild($1); $$->addChild(new Node(ID, $2)); }
+    { $$ = new TypedSymbolListAST(*$2, (decafType)$1); delete $2; }
     ;
 
 type: T_INTTYPE
-    { $$ = new Node(TYPE, "int"); }
+    { $$ = intTy; }
     | T_BOOLTYPE
-    { $$ = new Node(TYPE, "bool"); }
+    { $$ = boolTy; }
     ;
 
 block: T_LCB var_decl_list statement_list T_RCB
-    { $$ = new Node(BLOCK); $$->addChild($2); $$->addChild($3); }
+    { $$ = new BlockAST((decafStmtList *)$2, (decafStmtList *)$3); }
 
 method_block: T_LCB var_decl_list statement_list T_RCB
-    { $$ = new Node(BLOCK); $$->addChild($2); $$->addChild($3); }
+    { $$ = new MethodBlockAST((decafStmtList *)$2, (decafStmtList *)$3); }
 
 var_decl_list: var_decl var_decl_list
-    { $$ = new Node(); $$->addChild($1); $$->addChild($2); }
+    { decafStmtList *slist = (decafStmtList *)$2; slist->push_front($1); $$ = slist; }
     | /* empty */
-    { $$ = NULL; }
+    { decafStmtList *slist = new decafStmtList(); $$ = slist; }
     ;
 
 var_decl: var_list T_SEMICOLON
     { $$ = $1; }
 
 var_list: var_list T_COMMA T_ID
-    { $$ = new Node(); $$->addChild($1); $$->addChild(new Node(ID, $3)); }
+    { 
+        TypedSymbolListAST *tlist = (TypedSymbolListAST *)$1; 
+        tlist->new_sym(*$3); 
+        $$ = tlist;
+        delete $3;
+    }
     | type T_ID
-    { $$ = new Node(); $$->addChild($1); $$->addChild(new Node(ID, $2)); }
+    { $$ = new TypedSymbolListAST(*$2, (decafType)$1); delete $2; }
     ;
 
 statement_list: statement statement_list
-    { $$ = new Node(); $$->addChild($1); $$->addChild($2); }
-    | /* empty */
-    { $$ = NULL; }
+    { decafStmtList *slist = (decafStmtList *)$2; slist->push_front($1); $$ = slist; }
+    | /* empty */ 
+    { decafStmtList *slist = new decafStmtList(); $$ = slist; }
     ;
 
 statement: assign T_SEMICOLON
@@ -186,61 +194,61 @@ statement: assign T_SEMICOLON
     | method_call T_SEMICOLON
     { $$ = $1; }
     | T_IF T_LPAREN expr T_RPAREN block T_ELSE block
-    { $$ = new Node(IF_STATEMENT); $$->addChild($3); $$->addChild($5); $$->addChild($7);}
-    | T_IF T_LPAREN expr T_RPAREN block
-    { $$ = new Node(IF_STATEMENT); $$->addChild($3); $$->addChild($5); }
+    { $$ = new IfStmtAST($3, (BlockAST *)$5, (BlockAST *)$7); }
+    | T_IF T_LPAREN expr T_RPAREN block 
+    { $$ = new IfStmtAST($3, (BlockAST *)$5, NULL); }
     | T_WHILE T_LPAREN expr T_RPAREN block
-    { $$ = new Node(WHILE_STATEMENT); $$->addChild($3); $$->addChild($5); }
+    { $$ = new WhileStmtAST($3, (BlockAST *)$5); }
     | T_FOR T_LPAREN assign_comma_list T_SEMICOLON expr T_SEMICOLON assign_comma_list T_RPAREN block
-    { $$ = new Node(FOR_STATEMENT); $$->addChild($3); $$->addChild($5); $$->addChild($7); $$->addChild($9); }
+    { $$ = new ForStmtAST((decafStmtList *)$3, $5, (decafStmtList *)$7, (BlockAST *)$9); }
     | T_RETURN T_LPAREN expr T_RPAREN T_SEMICOLON
-    { $$ = new Node(RETURN_STATEMENT); $$->addChild($3); }
+    { $$ = new ReturnStmtAST($3); }
     | T_RETURN T_LPAREN T_RPAREN T_SEMICOLON
-    { $$ = new Node(RETURN_STATEMENT); }
+    { $$ = new ReturnStmtAST(NULL); }
     | T_RETURN T_SEMICOLON
-    { $$ = new Node(RETURN_STATEMENT); }
+    { $$ = new ReturnStmtAST(NULL); }
     | T_BREAK T_SEMICOLON
-    { $$ = new Node(BREAK_STATEMENT); }
+    { $$ = new BreakStmtAST(); }
     | T_CONTINUE T_SEMICOLON
-    { $$ = new Node(CONTINUE_STATEMENT); }
+    { $$ = new ContinueStmtAST(); }
     | block
     { $$ = $1; }
     ;
 
 assign: T_ID T_ASSIGN expr
-    { $$ = new Node(ASSIGN_STATEMENT); $$->addChild(new Node(ID, $1)); $$->addChild($3); }
+    { $$ = new AssignVarAST(*$1, $3); delete $1; }
     | T_ID T_LSB expr T_RSB T_ASSIGN expr
-    { $$ = new Node(ASSIGN_STATEMENT); $$->addChild(new Node(ID, $1)); $$->addChild($3); $$->addChild($6); }
+    { $$ = new AssignArrayLocAST(*$1, $3, $6); delete $1; }
     ;
 
 method_call: T_ID T_LPAREN method_arg_list T_RPAREN
-    { $$ = new Node(METHOD_CALL); $$->addChild(new Node(ID, $1)); $$->addChild($3); }
+    { $$ = new MethodCallAST(*$1, (decafStmtList *)$3); delete $1; }
     | T_ID T_LPAREN T_RPAREN
-    { $$ = new Node(METHOD_CALL); $$->addChild(new Node(ID, $1)); }
+    { $$ = new MethodCallAST(*$1, (decafStmtList *)NULL); delete $1; }
     ;
 
 method_arg_list: method_arg
-    { $$ = $1; }
+    { decafStmtList *slist = new decafStmtList(); slist->push_front($1); $$ = slist; }
     | method_arg T_COMMA method_arg_list
-    { $$ = new Node(); $$->addChild($1); $$->addChild($3); }
+    { decafStmtList *slist = (decafStmtList *)$3; slist->push_front($1); $$ = slist; }
     ;
 
 method_arg: expr
     { $$ = $1; }
     | T_STRINGCONSTANT
-    { $$ = new Node(CONSTANT, $1); }
+    { $$ = new StringConstAST(*$1); delete $1; }
     ;
-
+   
 assign_comma_list: assign
-    { $$ = $1; }
+    { decafStmtList *slist = new decafStmtList(); slist->push_front($1); $$ = slist; }
     | assign T_COMMA assign_comma_list
-    { $$ = new Node(); $$->addChild($1); $$->addChild($3); }
+    { decafStmtList *slist = (decafStmtList *)$3; slist->push_front($1); $$ = slist; }
     ;
 
 rvalue: T_ID
-    { $$ = new Node(); $$->addChild(new Node(ID, $1)); }
+    { $$ = new VariableExprAST(*$1); delete $1; }
     | T_ID T_LSB expr T_RSB
-    { $$ = new Node(); $$->addChild(new Node(ID, $1)); $$->addChild($3); }
+    { $$ = new ArrayLocExprAST(*$1, $3); delete $1; }
     ;
 
 expr: rvalue
@@ -250,63 +258,60 @@ expr: rvalue
     | constant
     { $$ = $1; }
     | expr T_PLUS expr
-    { $$ = new Node(BINARY_EXPR, "+"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprAST(T_PLUS, $1, $3); }
     | expr T_MINUS expr
-    { $$ = new Node(BINARY_EXPR, "-"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprAST(T_MINUS, $1, $3); }
     | expr T_MULT expr
-    { $$ = new Node(BINARY_EXPR, "*"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprAST(T_MULT, $1, $3); }
     | expr T_DIV expr
-    { $$ = new Node(BINARY_EXPR, "//"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprAST(T_DIV, $1, $3); }
     | expr T_LEFTSHIFT expr
-    { $$ = new Node(BINARY_EXPR, "<<"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprAST(T_LEFTSHIFT, $1, $3); }
     | expr T_RIGHTSHIFT expr
-    { $$ = new Node(BINARY_EXPR, ">>"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprAST(T_RIGHTSHIFT, $1, $3); }
     | expr T_MOD expr
-    { $$ = new Node(BINARY_EXPR, "%"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprAST(T_MOD, $1, $3); }
     | expr T_LT expr
-    { $$ = new Node(BINARY_EXPR, "<"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprAST(T_LT, $1, $3); }
     | expr T_GT expr
-    {$$ = new Node(BINARY_EXPR, ">"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprAST(T_GT, $1, $3); }
     | expr T_LEQ expr
-    { $$ = new Node(BINARY_EXPR, "<="); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprAST(T_LEQ, $1, $3); }
     | expr T_GEQ expr
-    { $$ = new Node(BINARY_EXPR, ">="); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprAST(T_GEQ, $1, $3); }
     | expr T_EQ expr
-    { $$ = new Node(BINARY_EXPR, "="); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprAST(T_EQ, $1, $3); }
     | expr T_NEQ expr
-    { $$ = new Node(BINARY_EXPR, "!="); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprAST(T_NEQ, $1, $3); }
     | expr T_AND expr
-    { $$ = new Node(BINARY_EXPR, "&&"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprAST(T_AND, $1, $3); }
     | expr T_OR expr
-    { $$ = new Node(BINARY_EXPR, "||"); $$->addChild($1); $$->addChild($3); }
-    | T_MINUS expr %prec UMINUS
-    { $$ = new Node(UNARY_EXPR, "-"); $$->addChild($2); }
+    { $$ = new BinaryExprAST(T_OR, $1, $3); }
+    | T_MINUS expr %prec UMINUS 
+    { $$ = new UnaryExprAST(T_MINUS, $2); }
     | T_NOT expr
-    { $$ = new Node(UNARY_EXPR, "!"); $$->addChild($2); }
+    { $$ = new UnaryExprAST(T_NOT, $2); }
     | T_LPAREN expr T_RPAREN
     { $$ = $2; }
     ;
 
 constant: T_INTCONSTANT
-    { $$ = new Node(CONSTANT, $1); }
+    { $$ = new NumberExprAST($1); }
     | T_CHARCONSTANT
-    { $$ = new Node(CONSTANT, $1); }
+    { $$ = new NumberExprAST($1); }
     | bool_constant
     { $$ = $1; }
     ;
 
 bool_constant: T_TRUE
-    { $$ = new Node(CONSTANT, "true"); }
-    | T_FALSE
-    { $$ = new Node(CONSTANT, "false"); }
+    { $$ = new BoolExprAST(true); }
+    | T_FALSE 
+    { $$ = new BoolExprAST(false); }
     ;
 
 %%
 
 int main() {
-  // Intialize LLVM module
-  //LLVMContext &Context = getGlobalContext();
-  //TheModule = new Module("?",Context);
   // parse the input and create the abstract syntax tree
   int retval = yyparse();
   return(retval >= 1 ? 1 : 0);
