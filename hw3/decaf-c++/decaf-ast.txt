@@ -592,7 +592,7 @@ Value *VariableExprAST::codegen(){
 
 
 //Binary Operations:
-llvm:: Value *BinaryExprAST::codegen() {
+Value *BinaryExprAST::codegen(decafType Op) {
   Value *L = LHS->codegen();
   Value *R = RHS->codegen();
   if (L == 0 || R == 0) return 0;
@@ -658,8 +658,24 @@ llvm:: Value *BinaryExprAST::codegen() {
 }
 
 //expr
-llvm:: Value *ExprAST::codegen() {
+Value *ExprAST::codegen(decafType Op) {
+  switch (Op) {
+  	//Id
 	
+  	//method-call
+	
+  	//constant
+	
+  	//expr bin-op expr
+	
+  	//'-' expr
+	case '-':  return Builder.CreateFNeg(); break;
+  	//'!' expr
+	
+ 	// '(' expr ')'
+
+	default: return ErrorV("invalid operator");
+ }
 
 }
 
