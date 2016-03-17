@@ -4,6 +4,7 @@
 #include <string>
 #include <cstdlib>
 #include "decafast-defs.h"
+#include "Scope.h"
 
 int yylex(void);
 int yyerror(char *); 
