@@ -592,7 +592,7 @@ Value *VariableExprAST::codegen(){
 
 
 //Binary Operations:
-Value *BinaryExprAST::codegen() {
+llvm:: Value *BinaryExprAST::codegen() {
   Value *L = LHS->codegen();
   Value *R = RHS->codegen();
   if (L == 0 || R == 0) return 0;
@@ -643,32 +643,25 @@ Value *BinaryExprAST::codegen() {
                                 "booltmp");
       break;
   case '&&':
-      L=Builder.CreateAnd(L,R,"andtmp");
+     return Builder.CreateAnd(L,R,"andtmp");
      // Convert bool 0/1 to double 0.0 or 1.0
-    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
+    //return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
                                 "booltmp");
 
   case '||':
-      L=Builder.CreateOr(L,R,"ortmp");
+      return Builder.CreateOr(L,R,"ortmp");
      // Convert bool 0/1 to double 0.0 or 1.0
-    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
+    //return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
                                 "booltmp");
        break;
- default:
-      break;
-}
-
-
-
-
-
-
-
-
   default: return ErrorV("invalid binary operator");
 }
 
+//expr
+llvm:: Value *ExprAST::codegen() {
+	
 
+}
 
 
 // function to convert decafType to llvm Type
