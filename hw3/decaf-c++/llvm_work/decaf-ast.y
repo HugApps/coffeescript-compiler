@@ -11,7 +11,7 @@ int yyerror(char *);
 using namespace std;
 
 // print AST?
-bool printAST = true;
+bool printAST = false;
 
 #include "decaf-ast.cc"
 
@@ -216,7 +216,7 @@ statement: assign T_SEMICOLON
     ;
 
 assign: T_ID T_ASSIGN expr
-    { $$ = new AssignVarAST(*$1, $3); delete $1; }
+    { $$ = new AssignVarAST(*$1, $3); delete $1; printf(" //decl at line %i",lineno); }
     | T_ID T_LSB expr T_RSB T_ASSIGN expr
     { $$ = new AssignArrayLocAST(*$1, $3, $6); delete $1; }
     ;
