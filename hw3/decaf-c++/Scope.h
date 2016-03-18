@@ -1,7 +1,7 @@
 #ifndef SCOPE_H_
 #define SCOPE_H_
 
-#include <unordered_map>
+#include <map>
 #include <vector>
 #include <assert.h>
 
@@ -27,6 +27,11 @@ public:
 	std::string getValue()
 	{
 		return _value;
+	}
+
+	int getLineNumber()
+	{
+		return _lineNumber;
 	}
 
 private:
@@ -57,7 +62,7 @@ public:
 
 	bool containsDefinition(std::string key)
 	{
-		std::unordered_map<std::string, Symbol>::const_iterator it = _symbols.find(key);
+		std::map<std::string, Symbol>::iterator it = _symbols.find(key);
 		if (it == _symbols.end())
 			return false;
 		else
@@ -65,7 +70,7 @@ public:
 	}
 
 private:
-	std::unordered_map<std::string, Symbol> _symbols;
+	std::map<std::string, Symbol> _symbols;
 };
 
 namespace SCOPE
@@ -133,7 +138,7 @@ namespace SCOPE
 		int _currentChild;
 	};
 
-	static Scope* currentScope = NULL;
+	static Scope* currentScope = new Scope(NULL);
 
 	static void enterNewScope()
 	{
@@ -160,10 +165,19 @@ namespace SCOPE
 
 	static void leaveScope()
 	{
-		if (currentScope == NULL)
+		if (currentScope->getParentScope() == NULL)
 			return;
 
 		currentScope = currentScope->getParentScope();
+	}
+
+	static void nextScope()
+	{
+		if(currentScope->getParentScope() != NULL)
+		{
+			currentScope->getParentScope()->nextChildScope();
+			currentScope = currentScope->getParentScope()->getCurrentChildScope();
+		}
 	}
 
 	static void addDefinition(std::string key, Symbol value)
@@ -188,14 +202,14 @@ namespace SCOPE
 	static Symbol& getDefinition(std::string key)
 	{
 		Scope* scope = currentScope;
-		do
+		while (scope != NULL)
 		{
 			if (scope->getSymbolTable().containsDefinition(key))
 			{
 				return scope->getSymbolTable().getDefinition(key);
 			}
 			scope = scope->getParentScope();
-		} while (scope != NULL);
+		} 
 		assert(false);
 	}
 }

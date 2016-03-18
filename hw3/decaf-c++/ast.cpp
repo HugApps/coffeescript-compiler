@@ -7,6 +7,7 @@
 #include <string.h>
 #include <sstream>
 #include <vector>
+#include "Scope.h"
 
 std::string to_string(int num)
 {
@@ -36,6 +37,7 @@ enum Type
 	FIELD_DECL,
 	FIELD_DECL_ARRAY,
 	METHOD_DECL,
+	METHOD_ARG,
 	DECL,
 	VAR_DECL,
 	PARAM,
@@ -112,6 +114,14 @@ class Node
 		~Node()
 		{
 		}
+
+		virtual void generateSymbols()
+		{
+			for(int i = 0; i < children.size(); i++)
+			{
+				children[i]->generateSymbols();
+			}
+		}
 		
 		virtual std::string toString()
 		{			
@@ -152,6 +162,21 @@ class Node
 		std::string value;
 		std::vector<Node*> children;
 };
+
+void flattenList(Node* parent, Node* node)
+{
+	for(int i = 0; i < node->children.size(); i ++)
+	{
+		if(node->children[i]->type == LIST || node->children[i]->type == LIST_NO_SPACES)
+		{
+			flattenList(parent, node->children[i]);
+		}
+		else
+		{
+			parent->children.push_back(node->children[i]);
+		}
+	}
+}
 
 class ProgramNode : public Node
 {
@@ -198,8 +223,16 @@ class ClassNode : public Node
 		{
 		}
 
+		void generateSymbols()
+		{
+			SCOPE::enterNewScope();
+			Node::generateSymbols();
+			SCOPE::leaveScope();
+		}
+
 		std::string toString()
 		{
+			SCOPE::enterScope();
 			currentBlockDepth++;
 
 			std::string nodeStr = "class " + children[0]->toString() + " {\n" + children[1]->toString();
@@ -208,6 +241,7 @@ class ClassNode : public Node
 				nodeStr += children[2]->toString();
 			}
 			currentBlockDepth--;
+			SCOPE::leaveScope();
 			nodeStr += "}";
 			return nodeStr;
 		}
@@ -218,6 +252,22 @@ class FieldDeclNode : public Node
 	public:
 		FieldDeclNode(int lineNumber) : Node(FIELD_DECL, lineNumber)
 		{
+		}
+
+		void generateSymbols()
+		{
+			if(children.size() == 1)
+			{
+				SCOPE::addDefinition(children[0]->toString(), Symbol("", lineNumber));
+			}	
+			else if(children.size() == 2)
+			{
+				SCOPE::addDefinition(children[1]->toString(), Symbol("", lineNumber));
+			}	
+			else
+			{
+				SCOPE::addDefinition(children[1]->toString(), Symbol(children[2]->toString(), lineNumber));
+			}
 		}
 
 		std::string toString()
@@ -244,6 +294,11 @@ class FieldArrayDeclNode : public Node
 		{
 		}
 
+		void generateSymbols()
+		{
+			SCOPE::addDefinition(children[0]->toString(), Symbol("", lineNumber));
+		}
+
 		std::string toString()
 		{
 			if(children.size() == 3)
@@ -264,8 +319,16 @@ class MethodDeclNode : public Node
 		{
 		}
 
+		void generateSymbols()
+		{
+			SCOPE::enterNewScope();
+			Node::generateSymbols();
+			SCOPE::leaveScope();
+		}
+
 		std::string toString()
 		{
+			SCOPE::enterScope();
 			std::string nodeStr = indentation() + children[0]->toString() + " " + children[1]->toString() + "(";
 			if(children.size() == 4)
 			{
@@ -278,7 +341,8 @@ class MethodDeclNode : public Node
 				nodeStr += ") ";
 				nodeStr += children[2]->toString();
 			}
-			
+			SCOPE::leaveScope();
+			SCOPE::nextScope();
 			return nodeStr;
 		}
 };
@@ -341,6 +405,11 @@ class MethodParamNode : public Node
 		{
 		}
 
+		void generateSymbols()
+		{
+			SCOPE::addDefinition(children[1]->toString(), Symbol("", lineNumber));
+		}
+
 		std::string toString()
 		{
 			return children[0]->toString() + " " + children[1]->toString();
@@ -350,23 +419,45 @@ class MethodParamNode : public Node
 class BlockNode : public Node
 {
 	public:
-		BlockNode() : Node(BLOCK)
+		BlockNode() : Node(BLOCK), startOnNewLine(false)
 		{
+		}
+
+		void generateSymbols()
+		{
+			SCOPE::enterNewScope();
+			Node::generateSymbols();
+			SCOPE::leaveScope();
 		}
 
 		std::string toString()
 		{
+			SCOPE::enterScope();
+			
+			std::string nodeStr = "";
+			if(startOnNewLine)
+			{
+				nodeStr = indentation() + "{\n";
+			}
+			else
+			{
+				nodeStr = "{\n";
+			}
+
 			currentBlockDepth++;
-			std::string nodeStr = "{\n"; 
 			for(int i = 0; i < children.size(); i++)
 			{
 				nodeStr += children[i]->toString();
 			}
 			currentBlockDepth--;
+			SCOPE::leaveScope();
+			SCOPE::nextScope();
 			nodeStr += indentation() + "}\n";
 			
 			return nodeStr;
 		}
+
+		bool startOnNewLine;
 };
 
 class DeclarationNode : public Node
@@ -388,6 +479,18 @@ class VarDeclNode : public Node
 	public:
 		VarDeclNode(int lineNumber) : Node(VAR_DECL, lineNumber)
 		{
+		}
+
+		void generateSymbols()
+		{
+			if(children.size() == 2)
+			{
+				SCOPE::addDefinition(children[1]->toString(), Symbol("", lineNumber));
+			}
+			else
+			{
+				SCOPE::addDefinition(children[0]->toString(), Symbol("", lineNumber));
+			}
 		}
 
 		std::string toString()
@@ -412,13 +515,20 @@ class AssignStatementNode : public Node
 
 		std::string toString()
 		{
+			std::string comment = "";
+			if(SCOPE::containsDefinition(children[0]->toString()))
+			{
+				int lineNumber = SCOPE::getDefinition(children[0]->toString()).getLineNumber();
+				comment = "// using decl on line: " + to_string(lineNumber);
+			}
+
 			if(children.size() == 2)
 			{
-				return indentation() + children[0]->toString() + " = " + children[1]->toString() + ";\n";
+				return indentation() + children[0]->toString() + " = " + children[1]->toString() + "; " + comment + "\n";
 			}
 			else
 			{
-				return indentation() + children[0]->toString() + "[" + children[1]->toString() + "] = " + children[2]->toString() + ";\n";
+				return indentation() + children[0]->toString() + "[" + children[1]->toString() + "] = " + children[2]->toString() + "; " + comment + "\n";
 			}
 		}
 };
@@ -432,16 +542,56 @@ class MethodCallNode : public Node
 
 		std::string toString()
 		{
+
 			if(children.size() == 1)
 			{
 				return indentation() + children[0]->toString() + "();\n";
 			}
 			else
 			{
+				Node* list = new Node();
+				flattenList(list, children[1]);
+
+				std::string nodeStr = indentation() + children[0]->toString() + "(";
+				if(list->children.size() == 1 && list->children[0]->type == ID)
+				{
+					std::string comment = "";
+					if(SCOPE::containsDefinition(list->children[0]->toString()))
+					{
+						int lineNumber = SCOPE::getDefinition(list->children[0]->toString()).getLineNumber();
+						comment = "// using decl on line: " + to_string(lineNumber);
+					}
+
+					nodeStr += list->children[0]->toString() + ") " + comment + ";\n";
+	
+					return nodeStr;
+				}
+				else if(list->children.size() == 3 && list->children[0]->type == RVALUE)
+				{
+					for(int i = 0; i < list->children.size(); i++)
+					{
+						std::string comment = "";
+						if(SCOPE::containsDefinition(list->children[i]->toString()))
+						{
+							int lineNumber = SCOPE::getDefinition(list->children[i]->toString()).getLineNumber();
+							comment = "// using decl on line: " + to_string(lineNumber);
+						}
+
+						if(i == 2)
+						{
+							nodeStr += list->children[i]->toString() + ") " + comment + ";\n";
+							break;
+						}
+
+						nodeStr += list->children[i]->toString() + ", " + comment;
+					}
+					return nodeStr;
+				}
 				return indentation() + children[0]->toString() + "(" + children[1]->toString() + ");\n";
 			}
 		}
 };
+
 
 class IfStatementNode : public Node
 {
@@ -474,6 +624,7 @@ class WhileStatementNode : public Node
 
 		std::string toString()
 		{
+
 			return indentation() + "for(" + children[0]->toString() + ")" + children[1]->toString();
 		}
 };
@@ -485,10 +636,21 @@ class ForStatementNode : public Node
 		{
 		}
 
+		void generateSymbols()
+		{
+			SCOPE::enterNewScope();
+			Node::generateSymbols();
+			SCOPE::leaveScope();
+		}
+
 		std::string toString()
 		{
-			return indentation() + "while(" + children[0]->toString() + ";" 
+			SCOPE::enterScope();
+			std::string nodeStr = indentation() + "while(" + children[0]->toString() + ";" 
 				+ children[1]->toString() + ";" + children[2]->toString() + ")" + children[3]->toString();
+			SCOPE::leaveScope();
+			SCOPE::nextScope();
+			return nodeStr;
 		}
 };
 

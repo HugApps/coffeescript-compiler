@@ -59,6 +59,7 @@ program: extern_list decafclass
         root->addChild($1);   	
         root->addChild($2);
 
+        root->generateSymbols();
 		printf("%s\n", root->toString().c_str());
     }
     ;
@@ -207,7 +208,7 @@ statement: assign T_SEMICOLON
     | T_CONTINUE T_SEMICOLON
     { $$ = new ContinueStatementNode(); }
     | block
-    { $$ = $1; }
+    { $$ = $1; ((BlockNode*)$1)->startOnNewLine = true; }
     ;
 
 assign: T_ID T_ASSIGN expr
