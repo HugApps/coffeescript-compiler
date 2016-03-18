@@ -4,14 +4,20 @@
 #include <ostream>
 #include <iostream>
 #include <sstream>
+#include "llvm-3.7/llvm/IR/IRBuilder.h"
+#include "llvm-3.7/llvm/IR/LLVMContext.h"
+#include "llvm-3.7/llvm/IR/Module.h"
+#include "llvm-3.7/llvm/IR/DerivedTypes.h"
+#include "llvm/Analysis/Verifier.h"
+
 
 #ifndef YYTOKENTYPE
 #include "decaf-ast.tab.h"
 #endif
 
-using namespace std ;
+using namespace std;
 using namespace llvm;
-// Codegen builder and module
+
 static Module *TheModule;
 static IRBuilder<> Builder(getGlobalContext());
 static std::map<std::string, Value*> NamedValues;
@@ -67,8 +73,9 @@ string convertInt(int number) {
 class decafAST {
 public:
   virtual ~decafAST() {}
-  virtual string str() { return string(""); }
-  virtual Value *codegen() = 0 ;
+  virtual string str() { return string("");
+   }
+    virtual Value *codegen() = 0 ;
 };
 
 string getString(decafAST *d) {
@@ -163,12 +170,12 @@ public:
 			return TyString(Ty) + " " + Sym;
 		}
 	}
+	virtual Value *codegen();
 	//virtual string getName();
 };
 
 class TypedSymbolListAST : public decafAST {
 	list<class TypedSymbol *> arglist;
-
 	decafType listType; // this variable is used if all the symbols in the list share the same type
 private:
     bool isType;
@@ -204,7 +211,6 @@ public:
         this->isType = type;
 	}
 	string str() { return commaList<class TypedSymbol *>(arglist,isType); }
-         virtual Value *codegen();
 };
 
 /// decafStmtList - List of Decaf statements
@@ -214,7 +220,6 @@ class decafStmtList : public decafAST {
 private:
     bool isType;
 public:
-
 	decafStmtList() {}
 	~decafStmtList() {
 		for (list<decafAST *>::iterator i = stmts.begin(); i != stmts.end(); i++) {
@@ -229,7 +234,6 @@ public:
         //printf("istype value: %d \n",type);
 	}
 	string str() { /*printf("indecafstatmentlist %d \n", isType);*/ return commaList<class decafAST *>(stmts,isType); }
-        virtual Value *codegen();
 };
 
 /// NumberExprAST - Expression class for integer numeric literals like "12".
@@ -238,7 +242,7 @@ class NumberExprAST : public decafAST {
 public:
 	NumberExprAST(int val) : Val(val) {}
 	string str() { return buildString1("", convertInt(Val)); }
-        virtual Value *codegen();
+	 virtual Value *codegen();
 };
 
 /// StringConstAST - string constant
@@ -247,7 +251,7 @@ class StringConstAST : public decafAST {
 public:
 	StringConstAST(string s) : StringConst(s) {}
 	string str() { return buildString1("StringConstant", "\"" + StringConst + "\""); }
-        virtual Value *codegen();
+    virtual Value *codegen();
 };
 
 /// BoolExprAST - Expression class for boolean literals: "true" and "false".
@@ -256,7 +260,7 @@ class BoolExprAST : public decafAST {
 public:
 	BoolExprAST(bool val) : Val(val) {}
 	string str() { return buildString1("", Val ? string("true") : string("false")); }
-        virtual Value *codegen();
+    virtual Value *codegen();
 };
 
 /// VariableExprAST - Expression class for variables like "a".
@@ -265,8 +269,8 @@ class VariableExprAST : public decafAST {
 public:
 	VariableExprAST(string name) : Name(name) {}
 	string str() { return buildString1("VariableExpr", Name); }
+    virtual Value *codegen();
 	//const std::string &getName() const { return Name; }
-        virtual Value *codegen();
 };
 
 /// MethodCallAST - call a function with some arguments
@@ -277,7 +281,7 @@ public:
 	MethodCallAST(string name, decafStmtList *args) : Name(name), Args(args) {/*printf("in method call ast\n");*/ if(Args != NULL) Args->setType(true);}
 	~MethodCallAST() { delete Args; }
 	string str() { return buildString2("MethodCall", Name, Args); }
-        virtual Value *codegen();
+    virtual Value *codegen();
 };
 
 /// BinaryExprAST - Expression class for a binary operator.
@@ -288,7 +292,7 @@ public:
 	BinaryExprAST(int op, decafAST *lhs, decafAST *rhs) : Op(op), LHS(lhs), RHS(rhs) {}
 	~BinaryExprAST() { delete LHS; delete RHS; }
 	string str() { return buildString3("BinaryExpr", BinaryOpString(Op), LHS, RHS); }
-        virtual Value *codegen();
+    virtual Value *codegen();
 };
 
 /// UnaryExprAST - Expression class for a unary operator.
@@ -298,8 +302,8 @@ class UnaryExprAST : public decafAST {
 public:
 	UnaryExprAST(int op, decafAST *expr) : Op(op), Expr(expr) {}
 	~UnaryExprAST() { delete Expr; }
-	string str() { return buildString2("UnaryExpr", UnaryOpString(Op), Expr); }
-        virtual Value *codegen();
+	string str() { return buildString2("UnaryExpr", UnaryOpString(Op), Expr);
+    virtual Value *codegen();}
 };
 
 /// AssignVarAST - assign value to a variable
@@ -313,7 +317,7 @@ public:
 		if (Value != NULL) { delete Value; }
 	}
 	string str() { return buildString3(Name, " = ", Value, ";"); }
-        virtual Value *codegen();
+    virtual Value *codegen();
 };
 
 /// AssignArrayLocAST - assign value to a variable
@@ -325,7 +329,6 @@ public:
 	AssignArrayLocAST(string name, decafAST *index, decafAST *value) : Name(name), Index(index), Value(value) {}
 	~AssignArrayLocAST() { delete Index; delete Value; }
 	string str() { return buildString3("AssignArrayLoc", Name, Index, Value); }
-        virtual Value *codegen();
 };
 
 /// ArrayLocExprAST - access an array location
@@ -338,7 +341,6 @@ public:
 		if (Expr != NULL) { delete Expr; }
 	}
 	string str() { return buildString2("ArrayLocExpr", Name, Expr); }
-        virtual Value *codegen();
 };
 
 /// BlockAST - block
@@ -354,7 +356,7 @@ public:
 	decafStmtList *getVars() { return Vars; }
 	decafStmtList *getStatements() { return Statements; }
 	string str() { return buildString2("Block", Vars, Statements); }
-        virtual Value *codegen();
+		 virtual Value *codegen();
 };
 
 /// MethodBlockAST - block for methods
@@ -368,7 +370,7 @@ public:
 		if (Statements != NULL) { delete Statements; }
 	}
 	string str() { return buildString2("MethodBlock", Vars, Statements); }
-        virtual Value *codegen();
+		 virtual Value *codegen();
 };
 
 /// IfStmtAST - if statement
@@ -384,7 +386,6 @@ public:
 		if (ElseBlock != NULL) { delete ElseBlock; }
 	}
 	string str() { return buildString3("IfStmt", Cond, IfTrueBlock, ElseBlock); }
-        virtual Value *codegen();
 };
 
 /// WhileStmtAST - while statement
@@ -395,7 +396,6 @@ public:
 	WhileStmtAST(decafAST *cond, BlockAST *body) : Cond(cond), Body(body) {}
 	~WhileStmtAST() { delete Cond; delete Body; }
 	string str() { return buildString2("WhileStmt", Cond, Body); }
-        virtual Value *codegen();
 };
 
 /// ForStmtAST - for statement
@@ -414,7 +414,6 @@ public:
 		delete Body;
 	}
 	string str() { return buildString4("ForStmt", InitList, Cond, LoopEndList, Body); }
-        virtual Value *codegen();
 };
 
 /// ReturnStmtAST - return statement
@@ -426,7 +425,7 @@ public:
 		if (Value != NULL) { delete Value; }
 	}
 	string str() { return buildString1("ReturnStmt", Value); }
-        virtual Value *codegen();
+		 virtual Value *codegen();
 };
 
 /// BreakStmtAST - break statement
@@ -434,6 +433,7 @@ class BreakStmtAST : public decafAST {
 public:
 	BreakStmtAST() {}
 	string str() { return string("BreakStmt"); }
+
 };
 
 /// ContinueStmtAST - continue statement
@@ -441,7 +441,6 @@ class ContinueStmtAST : public decafAST {
 public:
 	ContinueStmtAST() {}
 	string str() { return string("ContinueStmt"); }
-        virtual Value *codegen();
 };
 
 /// MethodDeclAST - function definition
@@ -457,8 +456,8 @@ public:
 		delete FunctionArgs;
 		delete Block;
 	}
+    virtual Value *codegen();
 	string str() { return buildString4("Method", Name, TyString(ReturnType), FunctionArgs, Block); }
-        virtual Value *codegen();
 };
 
 /// AssignGlobalVarAST - assign value to a global variablei
@@ -473,7 +472,7 @@ public:
 		if (Value != NULL) { delete Value; }
 	}
 	string str() { return buildString3(Ty, " ", Name, " ","="," ", Value ,";"); }
-        virtual Value *codegen();
+		 virtual Value *codegen();
 };
 
 /// FieldDecl - field declaration aka Decaf global variable
@@ -484,7 +483,7 @@ class FieldDecl : public decafAST {
 public:
 	FieldDecl(string name, decafType ty, int size) : Name(name), Ty(ty), Size(size) {}
 	string str() { return buildString3("FieldDecl", Name, TyString(Ty), (Size == -1) ? "Scalar" : "Array(" + convertInt(Size) + ")"); }
-        virtual Value *codegen();
+		 virtual Value *codegen();
 };
 
 class FieldDeclListAST : public decafAST {
@@ -526,7 +525,6 @@ public:
         this->isType = type;
 	}
 	string str() { return commaList<class decafAST *>(arglist,isType); }
-        virtual Value *codegen();
 };
 
 class ClassAST : public decafAST {
@@ -541,7 +539,7 @@ public:
 		if (MethodDeclList != NULL) { delete MethodDeclList; }
 	}
 	string str() { return buildString3("Class", Name, FieldDeclList, MethodDeclList); }
-        virtual Value *codegen();
+		 virtual Value *codegen();
 };
 
 /// ExternAST - extern function definition
@@ -557,7 +555,7 @@ public:
 
 	}
 	string str() { return buildString3("ExternFunctione", Name, TyString(ReturnType), FunctionArgs); }
-        virtual Type *codegen();
+virtual Value *codegen();
 };
 
 /// ProgramAST - the decaf program
@@ -572,10 +570,66 @@ public:
 		if (ClassDef != NULL) { delete ClassDef; }
 	}
 	string str() { return buildString2("Program", ExternList, ClassDef); }
-        virtual Value *codegen();
-};
+	 virtual Value *codegen();};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static llvm::Type *getLLVMType(decafType ty) {
+ switch (ty) {
+ 	case voidTy: return Builder.getVoidTy();
+ 	case intTy: return Builder.getInt32Ty();
+ 	case boolTy: return Builder.getInt1Ty();
+ 	case stringTy: return Builder.getInt8PtrTy();
+  default: throw runtime_error("unknown type");
+ }
+
+
+
+
+
+
+
+
+
 
 //Codegen implementation for All the ASTs
+Value *ClassAST::codegen(){
+ TheModule = new Module(Name,getGlobalContext());
+
+
+
+
+
+}
+
+Value *ExternAST::codegen(){
+llvm::Type externtype = *getLLVMType(ReturnType);
+
+
+
+
+
+
+}
 
 Value *ErrorV(const char *Str) { Error(Str); return 0; }
 
@@ -585,14 +639,20 @@ Value *NumberExprAST::codegen() {
 }
 
 Value *VariableExprAST::codegen(){
-	Value *V ; // Get from hash table
-	return V ? V: ErrorV("Unknown Error");
+	//Value *V ; // Get from hash table
+	// temp variable without hashtable
+	Value *V = 10;
+	if (!V){return ErrorV("unknown variable");
+
+	}
+
+	return Builder.CreateLoad(V,Name);
 
 }
 
 
 //Binary Operations:
-Value *BinaryExprAST::codegen(decafType Op) {
+llvm:: Value *BinaryExprAST::codegen() {
   Value *L = LHS->codegen();
   Value *R = RHS->codegen();
   if (L == 0 || R == 0) return 0;
@@ -658,37 +718,14 @@ Value *BinaryExprAST::codegen(decafType Op) {
 }
 
 //expr
-Value *ExprAST::codegen(decafType Op) {
-  switch (Op) {
-  	//Id
-	
-  	//method-call
-	
-  	//constant
-	
-  	//expr bin-op expr
-	
-  	//'-' expr
-	case '-':  return Builder.CreateFNeg(); break;
-  	//'!' expr
-	
- 	// '(' expr ')'
+llvm:: Value *ExprAST::codegen() {
 
-	default: return ErrorV("invalid operator");
- }
 
 }
 
 
 // function to convert decafType to llvm Type
- static llvm::Type *getLLVMType(decafType ty) {
- switch (ty) {
- 	case voidTy: return Builder.getVoidTy();
- 	case intTy: return Builder.getInt32Ty();
- 	case boolTy: return Builder.getInt1Ty();
- 	case stringTy: return Builder.getInt8PtrTy();
-  default: throw runtime_error("unknown type");
- }
+
 
 
 
@@ -821,14 +858,28 @@ llvm::Value *MethodDeclCAST::Codegen(){
 llvm::Value *ReturnStmtAST::codegen(){
     // Should return the codegen of whatever is created inside that value , expr
     // Not sure if should handle blocks and scopes
-    return Value::codegen();
-    //
+
+    decafAST v = ReturnStmtAST.Value
+    return Builder.CreateRet(v.codegen());
+
+
 }
 
 
 // Codegen for variable assignment
 
 llvm::Value *AssignVarAST::codegen(){
+
+
+
+
+
+
+
+
+
+
+}
 /*
 Check if variable is declared in current scope table.
 
@@ -863,7 +914,7 @@ static llvm::Constant *CharConstAST::Codegen() {
   const char c = CharConst;//needs to be whichever var is in the 'CharConst' class - may not need that c_str function since its just referencing a char
    llvm::Value *GS =
 		    Builder.CreateGlobalString(c, "globalcharacter");
-  return Builder.CreateConstGEP2_32(GS, 0, 0, "cast");//not sure what this is doing, or if the vars need to be changed 
+  return Builder.CreateConstGEP2_32(GS, 0, 0, "cast");//not sure what this is doing, or if the vars need to be changed
 }
 
 /*Might not need this since numberexprast is doing the same. Keeping this for reference.
@@ -882,5 +933,24 @@ static llvm::Constant *BoolExprAST::codgen(){
 }
 
 
-/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
