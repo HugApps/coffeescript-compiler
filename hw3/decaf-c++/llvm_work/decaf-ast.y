@@ -157,12 +157,12 @@ type: T_INTTYPE
     | T_BOOLTYPE
     { $$ = boolTy; }
     ;
-/*
-begin_block: T_LCB {  }//syms.new_symtbl(); }
+
+begin_block: T_LCB { }//syms.new_symtbl(); }
 
 end_block:   T_RCB { }//syms.remove_symtbl(); }
-*/
-block: T_LCB var_decl_list statement_list T_RCB     
+
+block: begin_block var_decl_list statement_list end_block     
 { $$ = new BlockAST((decafStmtList *)$2, (decafStmtList *)$3); }
 
 
@@ -222,7 +222,7 @@ statement: assign T_SEMICOLON
     ;
 
 assign: T_ID T_ASSIGN expr
-    { $$ = new AssignVarAST(*$1, $3); delete $1; std::cout << " //decl at line "<<lineno<<endl;}//$3->getName()); }
+    { $$ = new AssignVarAST(*$1, $3); delete $1; std::cout << " //decl at line "<<lineno;}//$3->getName()); }
     | T_ID T_LSB expr T_RSB T_ASSIGN expr
     { $$ = new AssignArrayLocAST(*$1, $3, $6); delete $1; }
     ;
@@ -252,7 +252,7 @@ assign_comma_list: assign
     ;
 
 rvalue: T_ID
-    { VariableExprAST *var = new VariableExprAST(*$1); cout <<"var" << var->getName()<<endl; $$=var; delete $1; }
+    { $$ = new VariableExprAST(*$1); delete $1; }
     | T_ID T_LSB expr T_RSB
     { $$ = new ArrayLocExprAST(*$1, $3); delete $1; }
     ;
