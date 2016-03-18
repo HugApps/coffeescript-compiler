@@ -4,6 +4,7 @@
 #include <string>
 #include <cstdlib>
 #include "decafast-defs.h"
+#include "symbol-table.h"
 
 int yylex(void);
 int yyerror(char *); 
@@ -12,7 +13,6 @@ using namespace std;
 
 // print AST?
 bool printAST = false;
-//Scope scope(0);
 #include "decaf-ast.cc"
 
 %}
@@ -158,8 +158,13 @@ type: T_INTTYPE
     { $$ = boolTy; }
     ;
 
-block: T_LCB var_decl_list statement_list T_RCB
-    { printf("end"); $$ = new BlockAST((decafStmtList *)$2, (decafStmtList *)$3); }
+begin_block: T_LCB { }//syms.new_symtbl(); }
+
+end_block: T_RCB { }//syms.remove_symtbl(); }
+
+block: T_LCB var_decl_list statement_list T_RCB     
+{ $$ = new BlockAST((decafStmtList *)$2, (decafStmtList *)$3); }
+
 
 method_block: T_LCB var_decl_list statement_list T_RCB
     { $$ = new MethodBlockAST((decafStmtList *)$2, (decafStmtList *)$3); }
