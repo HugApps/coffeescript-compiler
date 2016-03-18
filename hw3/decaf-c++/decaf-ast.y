@@ -59,7 +59,7 @@ program: extern_list decafclass
         root->addChild($1);   	
         root->addChild($2);
 
-	printf("%s\n", root->toString().c_str());
+		printf("%s\n", root->toString().c_str());
     }
     ;
 
@@ -100,13 +100,15 @@ field_decl_list: field_decl_list field_decl
     ;
 
 field_decl: field_list T_SEMICOLON
-    { $$ = $1; }
+    { $$ = new DeclarationNode(lineno); $$->addChild($1); }
     | type T_ID T_ASSIGN constant T_SEMICOLON
-    { $$ = new FieldDeclNode(lineno); $$->addChild($1); $$->addChild(new IdNode($2)); $$->addChild($4); }
+    { $$ = new DeclarationNode(lineno); Node* node = new FieldDeclNode(lineno); node->addChild($1); 
+    	node->addChild(new IdNode($2)); node->addChild($4); $$->addChild(node); 
+    }
     ;
 
 field_list: field_list T_COMMA T_ID
-    { $$ = new Node(LIST); $$->addChild($1); Node* node = new FieldArrayDeclNode(lineno); node->addChild(new IdNode($3)); $$->addChild(node); }
+    { $$ = new Node(LIST); $$->addChild($1); Node* node = new FieldDeclNode(lineno); node->addChild(new IdNode($3)); $$->addChild(node); }
     | field_list T_COMMA T_ID T_LSB T_INTCONSTANT T_RSB
     { 
     	$$ = new Node(LIST); $$->addChild($1); 
@@ -167,17 +169,17 @@ var_decl_list: var_decl var_decl_list
     { $$ = NULL; }
     ;
 
-var_decl: type var_list T_SEMICOLON
-    { $$ = new VarDeclNode(lineno); $$->addChild($1); $$->addChild($2);}
+var_decl: var_list T_SEMICOLON
+    { $$ = new DeclarationNode(lineno); $$->addChild($1);}
 
 var_list: var_list T_COMMA T_ID
-    { $$ = new Node(LIST); $$->addChild($1); $$->addChild(new IdNode($3)); }
+    { $$ = new Node(LIST); $$->addChild($1); Node* node = new VarDeclNode(lineno); node->addChild(new IdNode($3)); $$->addChild(node);}
     | type T_ID
-    { $$ = new Node(LIST); $$->addChild($1); $$->addChild(new IdNode($2)); }
+    { $$ = new VarDeclNode(lineno); $$->addChild($1); $$->addChild(new IdNode($2)); }
     ;
 
 statement_list: statement statement_list
-    { $$ = new Node(LIST_NEW_LINE); $$->addChild($1); $$->addChild($2); }
+    { $$ = new Node(); $$->addChild($1); $$->addChild($2); }
     | /* empty */
     { $$ = NULL; }
     ;
@@ -187,23 +189,23 @@ statement: assign T_SEMICOLON
     | method_call T_SEMICOLON
     { $$ = $1; }
     | T_IF T_LPAREN expr T_RPAREN block T_ELSE block
-    { $$ = new Node(IF_STATEMENT); $$->addChild($3); $$->addChild($5); $$->addChild($7);}
+    { $$ = new IfStatementNode(); $$->addChild($3); $$->addChild($5); $$->addChild($7);}
     | T_IF T_LPAREN expr T_RPAREN block
-    { $$ = new Node(IF_STATEMENT); $$->addChild($3); $$->addChild($5); }
+    { $$ = new IfStatementNode(); $$->addChild($3); $$->addChild($5); }
     | T_WHILE T_LPAREN expr T_RPAREN block
-    { $$ = new Node(WHILE_STATEMENT); $$->addChild($3); $$->addChild($5); }
+    { $$ = new WhileStatementNode(); $$->addChild($3); $$->addChild($5); }
     | T_FOR T_LPAREN assign_comma_list T_SEMICOLON expr T_SEMICOLON assign_comma_list T_RPAREN block
-    { $$ = new Node(FOR_STATEMENT); $$->addChild($3); $$->addChild($5); $$->addChild($7); $$->addChild($9); }
+    { $$ = new ForStatementNode(); $$->addChild($3); $$->addChild($5); $$->addChild($7); $$->addChild($9); }
     | T_RETURN T_LPAREN expr T_RPAREN T_SEMICOLON
-    { $$ = new Node(RETURN_STATEMENT); $$->addChild($3); }
+    { $$ = new ReturnStatementNode(); $$->addChild($3); }
     | T_RETURN T_LPAREN T_RPAREN T_SEMICOLON
-    { $$ = new Node(RETURN_STATEMENT); }
+    { $$ = new ReturnStatementNode(true); }
     | T_RETURN T_SEMICOLON
-    { $$ = new Node(RETURN_STATEMENT); }
+    { $$ = new ReturnStatementNode(false); }
     | T_BREAK T_SEMICOLON
-    { $$ = new Node(BREAK_STATEMENT); }
+    { $$ = new BreakStatementNode(); }
     | T_CONTINUE T_SEMICOLON
-    { $$ = new Node(CONTINUE_STATEMENT); }
+    { $$ = new ContinueStatementNode(); }
     | block
     { $$ = $1; }
     ;
@@ -223,25 +225,25 @@ method_call: T_ID T_LPAREN method_arg_list T_RPAREN
 method_arg_list: method_arg
     { $$ = $1; }
     | method_arg T_COMMA method_arg_list
-    { $$ = new Node(LIST); $$->addChild($1); $$->addChild($3); }
+    { $$ = new Node(LIST_NO_SPACES); $$->addChild($1); $$->addChild($3); }
     ;
 
 method_arg: expr
     { $$ = $1; }
     | T_STRINGCONSTANT
-    { $$ = new Node(CONSTANT, $1); }
+    { $$ = new ConstantNode($1); }
     ;
 
 assign_comma_list: assign
     { $$ = $1; }
     | assign T_COMMA assign_comma_list
-    { $$ = new Node(); $$->addChild($1); $$->addChild($3); }
+    { $$ = new Node(LIST); $$->addChild($1); $$->addChild($3); }
     ;
 
 rvalue: T_ID
-    { $$ = new Node(); $$->addChild(new Node(ID, $1)); }
+    { $$ = new RValueNode(); $$->addChild(new IdNode($1)); }
     | T_ID T_LSB expr T_RSB
-    { $$ = new Node(); $$->addChild(new Node(ID, $1)); $$->addChild($3); }
+    { $$ = new RValueNode(); $$->addChild(new IdNode($1)); $$->addChild($3); }
     ;
 
 expr: rvalue
@@ -251,41 +253,41 @@ expr: rvalue
     | constant
     { $$ = $1; }
     | expr T_PLUS expr
-    { $$ = new Node(BINARY_EXPR, "+"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprNode("+"); $$->addChild($1); $$->addChild($3); }
     | expr T_MINUS expr
-    { $$ = new Node(BINARY_EXPR, "-"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprNode("-"); $$->addChild($1); $$->addChild($3); }
     | expr T_MULT expr
-    { $$ = new Node(BINARY_EXPR, "*"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprNode("*"); $$->addChild($1); $$->addChild($3); }
     | expr T_DIV expr
-    { $$ = new Node(BINARY_EXPR, "//"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprNode("//"); $$->addChild($1); $$->addChild($3); }
     | expr T_LEFTSHIFT expr
-    { $$ = new Node(BINARY_EXPR, "<<"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprNode("<<"); $$->addChild($1); $$->addChild($3); }
     | expr T_RIGHTSHIFT expr
-    { $$ = new Node(BINARY_EXPR, ">>"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprNode(">>"); $$->addChild($1); $$->addChild($3); }
     | expr T_MOD expr
-    { $$ = new Node(BINARY_EXPR, "%"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprNode("%"); $$->addChild($1); $$->addChild($3); }
     | expr T_LT expr
-    { $$ = new Node(BINARY_EXPR, "<"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprNode("<"); $$->addChild($1); $$->addChild($3); }
     | expr T_GT expr
-    {$$ = new Node(BINARY_EXPR, ">"); $$->addChild($1); $$->addChild($3); }
+    {$$ = new BinaryExprNode(">"); $$->addChild($1); $$->addChild($3); }
     | expr T_LEQ expr
-    { $$ = new Node(BINARY_EXPR, "<="); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprNode("<="); $$->addChild($1); $$->addChild($3); }
     | expr T_GEQ expr
-    { $$ = new Node(BINARY_EXPR, ">="); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprNode(">="); $$->addChild($1); $$->addChild($3); }
     | expr T_EQ expr
-    { $$ = new Node(BINARY_EXPR, "="); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprNode("="); $$->addChild($1); $$->addChild($3); }
     | expr T_NEQ expr
-    { $$ = new Node(BINARY_EXPR, "!="); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprNode("!="); $$->addChild($1); $$->addChild($3); }
     | expr T_AND expr
-    { $$ = new Node(BINARY_EXPR, "&&"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprNode("&&"); $$->addChild($1); $$->addChild($3); }
     | expr T_OR expr
-    { $$ = new Node(BINARY_EXPR, "||"); $$->addChild($1); $$->addChild($3); }
+    { $$ = new BinaryExprNode("||"); $$->addChild($1); $$->addChild($3); }
     | T_MINUS expr %prec UMINUS
-    { $$ = new Node(UNARY_EXPR, "-"); $$->addChild($2); }
+    { $$ = new UnaryExprNode("-"); $$->addChild($2); }
     | T_NOT expr
-    { $$ = new Node(UNARY_EXPR, "!"); $$->addChild($2); }
+    { $$ = new UnaryExprNode("!"); $$->addChild($2); }
     | T_LPAREN expr T_RPAREN
-    { $$ = $2; }
+    { $$ = new BracketExprNode(); $$->addChild($2); }
     ;
 
 constant: T_INTCONSTANT

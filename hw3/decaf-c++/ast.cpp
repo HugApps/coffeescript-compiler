@@ -15,14 +15,16 @@ std::string to_string(int num)
 	return convert.str();
 }
 
-namespace AST
+char* append(char* str1, char* str2) 
 {
-    char* append(char* str1, char* str2) {
 	size_t length = strlen(str1) + strlen(str2) + 1;
     	char* final_str = (char*) malloc(length);
 	strcat(strcat(final_str, str1), str2);
 	return final_str;
 }
+
+namespace AST
+{
 
 enum Type
 {
@@ -34,6 +36,7 @@ enum Type
 	FIELD_DECL,
 	FIELD_DECL_ARRAY,
 	METHOD_DECL,
+	DECL,
 	VAR_DECL,
 	PARAM,
 	CONSTANT,
@@ -49,8 +52,9 @@ enum Type
 	RVALUE,
 	BINARY_EXPR,
 	UNARY_EXPR,
+	BRACKET_EXPR,
 	LIST,
-	LIST_NEW_LINE,
+	LIST_NO_SPACES,
 	NONE
 };
 
@@ -112,33 +116,23 @@ class Node
 		virtual std::string toString()
 		{			
 			std::string nodeStr = "";
-			if(type == LIST_NEW_LINE)
+			std::string separator = "";
+
+			if(type == LIST)
 			{
-				for(int i = 0; i < children.size(); i++)
-				{
-					nodeStr += children[i]->toString();
-					if(i != children.size() - 1)
-					{
-						nodeStr += "\n";
-					}
-				}
+				separator = ", ";
 			}
-			else if(type == LIST)
+			else if(type == LIST_NO_SPACES)
 			{
-				for(int i = 0; i < children.size(); i++)
-				{
-					nodeStr += children[i]->toString();
-					if(i != children.size() - 1)
-					{
-						nodeStr += ",";
-					}
-				}
+				separator = ",";
 			}
-			else
+
+			for(int i = 0; i < children.size(); i++)
 			{
-				for(int i = 0; i < children.size(); i++)
+				nodeStr += children[i]->toString();
+				if(i != children.size() - 1)
 				{
-					nodeStr += children[i]->toString();
+					nodeStr += separator;
 				}
 			}
 			
@@ -228,7 +222,18 @@ class FieldDeclNode : public Node
 
 		std::string toString()
 		{
-			return indentation() + children[0]->toString() + " " + children[1]->toString() + " = " + children[2]->toString() + ";\n";
+			if(children.size() == 1)
+			{
+				return children[0]->toString();
+			}	
+			else if(children.size() == 2)
+			{
+				return children[0]->toString() + " " + children[1]->toString();
+			}	
+			else
+			{
+				return children[0]->toString() + " " + children[1]->toString() + " = " + children[2]->toString();
+			}	
 		}
 };
 
@@ -241,7 +246,14 @@ class FieldArrayDeclNode : public Node
 
 		std::string toString()
 		{
-			return indentation() + children[0]->toString() + " " + children[1]->toString() + " = " + children[2]->toString() + ";\n";
+			if(children.size() == 3)
+			{
+				return children[0]->toString() + " " + children[1]->toString() + "[" + children[2]->toString() + "]";
+			}	
+			else
+			{
+				return children[0]->toString()+ "[" + children[1]->toString() + "]";
+			}	
 		}
 };
 
@@ -258,7 +270,7 @@ class MethodDeclNode : public Node
 			if(children.size() == 4)
 			{
 				nodeStr += children[2]->toString();
-				nodeStr += ")";
+				nodeStr += ") ";
 				nodeStr += children[3]->toString();
 			}
 			else
@@ -348,7 +360,7 @@ class BlockNode : public Node
 			std::string nodeStr = "{\n"; 
 			for(int i = 0; i < children.size(); i++)
 			{
-				nodeStr += children[i]->toString() + "\n";
+				nodeStr += children[i]->toString();
 			}
 			currentBlockDepth--;
 			nodeStr += indentation() + "}\n";
@@ -356,6 +368,20 @@ class BlockNode : public Node
 			return nodeStr;
 		}
 };
+
+class DeclarationNode : public Node
+{
+	public:
+		DeclarationNode(int lineNumber) : Node(DECL, lineNumber)
+		{
+		}
+
+		std::string toString()
+		{
+			return indentation() + children[0]->toString() + ";\n";
+		}
+};
+
 
 class VarDeclNode : public Node
 {
@@ -366,7 +392,14 @@ class VarDeclNode : public Node
 
 		std::string toString()
 		{
-			return indentation() + children[0]->toString() + " " + children[1]->toString() + ";";
+			if(children.size() == 2)
+			{
+				return children[0]->toString() + " " + children[1]->toString();
+			}
+			else
+			{
+				return children[0]->toString();
+			}
 		}
 };
 
@@ -381,11 +414,11 @@ class AssignStatementNode : public Node
 		{
 			if(children.size() == 2)
 			{
-				return indentation() + children[0]->toString() + " = " + children[1]->toString() + ";";
+				return indentation() + children[0]->toString() + " = " + children[1]->toString() + ";\n";
 			}
 			else
 			{
-				return indentation() + children[0]->toString() + "[" + children[1]->toString() + "] = " + children[2]->toString() + ";";
+				return indentation() + children[0]->toString() + "[" + children[1]->toString() + "] = " + children[2]->toString() + ";\n";
 			}
 		}
 };
@@ -401,12 +434,177 @@ class MethodCallNode : public Node
 		{
 			if(children.size() == 1)
 			{
-				return indentation() + children[0]->toString() + "();";
+				return indentation() + children[0]->toString() + "();\n";
 			}
 			else
 			{
-				return indentation() + children[0]->toString() + "(" + children[1]->toString() + ");";
+				return indentation() + children[0]->toString() + "(" + children[1]->toString() + ");\n";
 			}
+		}
+};
+
+class IfStatementNode : public Node
+{
+	public:
+		IfStatementNode() : Node(IF_STATEMENT)
+		{
+		}
+
+		std::string toString()
+		{
+			std::string nodeStr = indentation() + "if(" + children[0]->toString() + ")";
+			if(children.size() == 2)
+			{
+				nodeStr += children[1]->toString();
+			}
+			else
+			{
+				nodeStr += children[1]->toString() + children[2]->toString();
+			}
+			return nodeStr;
+		}
+};
+
+class WhileStatementNode : public Node
+{
+	public:
+		WhileStatementNode() : Node(WHILE_STATEMENT)
+		{
+		}
+
+		std::string toString()
+		{
+			return indentation() + "for(" + children[0]->toString() + ")" + children[1]->toString();
+		}
+};
+
+class ForStatementNode : public Node
+{
+	public:
+		ForStatementNode() : Node(FOR_STATEMENT)
+		{
+		}
+
+		std::string toString()
+		{
+			return indentation() + "while(" + children[0]->toString() + ";" 
+				+ children[1]->toString() + ";" + children[2]->toString() + ")" + children[3]->toString();
+		}
+};
+
+class ReturnStatementNode : public Node
+{
+	public:
+		ReturnStatementNode(bool withParentheses) : Node(RETURN_STATEMENT), withParentheses(withParentheses)
+		{
+		}
+
+		ReturnStatementNode() : Node(RETURN_STATEMENT), withParentheses(true)
+		{
+		}
+
+		std::string toString()
+		{
+			std::string nodeStr = indentation() + "return";
+			if(children.size() == 1)
+			{
+				nodeStr += " (" + children[0]->toString() + ");\n";
+			}
+			else if(withParentheses)
+			{
+				nodeStr += " ();\n";
+			}
+			else
+			{
+				nodeStr += ";\n";
+			}
+			return nodeStr;
+		}
+
+	private:
+		bool withParentheses;
+};
+
+class BreakStatementNode : public Node
+{
+	public:
+		BreakStatementNode() : Node(BREAK_STATEMENT)
+		{
+		}
+
+		std::string toString()
+		{
+			return indentation() + "break;\n";
+		}
+};
+
+class ContinueStatementNode : public Node
+{
+	public:
+		ContinueStatementNode() : Node(CONTINUE_STATEMENT)
+		{
+		}
+
+		std::string toString()
+		{
+			return indentation() + "continue;\n";
+		}
+};
+
+class RValueNode : public Node
+{
+	public:
+		RValueNode() : Node(RVALUE)
+		{
+		}
+
+		std::string toString()
+		{
+			std::string nodeStr = children[0]->toString();
+			if(children.size() == 2)
+			{
+				nodeStr += "[" + children[1]->toString() + "]";
+			}
+			return nodeStr;
+		}
+};
+
+class BinaryExprNode : public Node
+{
+	public:
+		BinaryExprNode(std::string value) : Node(BINARY_EXPR, value)
+		{
+		}
+
+		std::string toString()
+		{
+			return children[0]->toString() + " " + value + " " + children[0]->toString();
+		}
+};
+
+class BracketExprNode : public Node
+{
+	public:
+		BracketExprNode() : Node(BRACKET_EXPR)
+		{
+		}
+
+		std::string toString()
+		{
+			return "(" + children[0]->toString() + ")";
+		}
+};
+
+class UnaryExprNode : public Node
+{
+	public:
+		UnaryExprNode(std::string value) : Node(UNARY_EXPR, value)
+		{
+		}
+
+		std::string toString()
+		{
+			return value + children[0]->toString();
 		}
 };
 
