@@ -56,11 +56,12 @@ start: program
 program: extern_list decafclass
     {
     	root = new ProgramNode();
-        root->addChild($1);       	
+        root->addChild($1);   	
         root->addChild($2);
 
 	printf("%s\n", root->toString().c_str());
     }
+    ;
 
 extern_list: extern_list extern_defn
     { $$ = new Node(); $$->addChild($1); $$->addChild($2); }
@@ -69,9 +70,9 @@ extern_list: extern_list extern_defn
     ;
 
 extern_defn: T_EXTERN method_type T_ID T_LPAREN extern_type_list T_RPAREN T_SEMICOLON
-    { $$ = new ExternNode(); $$->addChild($2); $$->addChild(new Node(ID, $3)); $$->addChild($5); }
+    { $$ = new ExternNode(); $$->addChild($2); $$->addChild(new IdNode($3)); $$->addChild($5); }
     | T_EXTERN method_type T_ID T_LPAREN T_RPAREN T_SEMICOLON
-    { $$ = new ExternNode(); $$->addChild($2); $$->addChild(new Node(ID, $3)); }
+    { $$ = new ExternNode(); $$->addChild($2); $$->addChild(new IdNode($3)); }
     ;
 
 extern_type_list: extern_type
@@ -81,15 +82,15 @@ extern_type_list: extern_type
     ;
 
 extern_type: T_STRINGTYPE
-    { $$ = new Node(TYPE, "string"); }
+    { $$ = new TypeNode("string"); }
     | type
     { $$ = $1; }
     ;
 
 decafclass: T_CLASS T_ID T_LCB field_decl_list method_decl_list T_RCB
-    { $$ = new ClassNode(); $$->addChild(new Node(ID, $2)); $$->addChild($4); $$->addChild($5); }
+    { $$ = new ClassNode(); $$->addChild(new IdNode($2)); $$->addChild($4); $$->addChild($5); }
     | T_CLASS T_ID T_LCB field_decl_list T_RCB
-    { $$ = new ClassNode(); $$->addChild(new Node(ID, $2)); $$->addChild($4); }
+    { $$ = new ClassNode(); $$->addChild(new IdNode($2)); $$->addChild($4); }
     ;
 
 field_decl_list: field_decl_list field_decl
@@ -101,21 +102,21 @@ field_decl_list: field_decl_list field_decl
 field_decl: field_list T_SEMICOLON
     { $$ = $1; }
     | type T_ID T_ASSIGN constant T_SEMICOLON
-    { $$ = new FieldDeclNode(lineno); $$->addChild($1); $$->addChild(new Node(ID, $2)); $$->addChild($4); }
+    { $$ = new FieldDeclNode(lineno); $$->addChild($1); $$->addChild(new IdNode($2)); $$->addChild($4); }
     ;
 
 field_list: field_list T_COMMA T_ID
-    { $$ = new Node(FIELD_DECL, lineno); $$->addChild($1);  $$->addChild(new Node(ID, $3));}
+    { $$ = new Node(LIST); $$->addChild($1); Node* node = new FieldArrayDeclNode(lineno); node->addChild(new IdNode($3)); $$->addChild(node); }
     | field_list T_COMMA T_ID T_LSB T_INTCONSTANT T_RSB
     { 
-    	$$ = new Node(); $$->addChild($1); 
-    	Node* node = new Node(FIELD_DECL_ARRAY, lineno); $$->addChild(new Node(ID, $3)); $$->addChild(new Node(CONSTANT, $5));
+    	$$ = new Node(LIST); $$->addChild($1); 
+    	Node* node = new FieldArrayDeclNode(lineno); $$->addChild(new IdNode($3)); $$->addChild(new ConstantNode($5));
     	$$->addChild(node);
     }
     | type T_ID
-    { $$ = new Node(FIELD_DECL, lineno); $$->addChild($1); $$->addChild(new Node(ID, $2)); }
+    { $$ = new FieldDeclNode(lineno); $$->addChild($1); $$->addChild(new IdNode($2)); }
     | type T_ID T_LSB T_INTCONSTANT T_RSB
-    { $$ = new Node(FIELD_DECL_ARRAY, lineno); $$->addChild($1); $$->addChild(new Node(ID, $2)); $$->addChild(new Node(CONSTANT, $4));}
+    { $$ = new FieldArrayDeclNode(lineno); $$->addChild($1); $$->addChild(new IdNode($2)); $$->addChild(new ConstantNode($4));}
     ;
 
 method_decl_list: method_decl_list method_decl
@@ -125,13 +126,13 @@ method_decl_list: method_decl_list method_decl
     ;
 
 method_decl: T_VOID T_ID T_LPAREN param_list T_RPAREN method_block
-    { $$ = new MethodDeclNode(); $$->addChild(new Node(TYPE, "void")); $$->addChild(new Node(ID, $2)); $$->addChild($4); $$->addChild($6);  }
+    { $$ = new MethodDeclNode(); $$->addChild(new TypeNode("void")); $$->addChild(new IdNode($2)); $$->addChild($4); $$->addChild($6);  }
     | type T_ID T_LPAREN param_list T_RPAREN method_block
-    { $$ = new MethodDeclNode(); $$->addChild($1); $$->addChild(new Node(ID, $2)); $$->addChild($4); $$->addChild($6); }
+    { $$ = new MethodDeclNode(); $$->addChild($1); $$->addChild(new IdNode($2)); $$->addChild($4); $$->addChild($6); }
     ;
 
 method_type: T_VOID
-    { $$ = new Node(TYPE, "void"); }
+    { $$ = new TypeNode("void"); }
     | type
     { $$ = $1; }
     ;
@@ -143,22 +144,22 @@ param_list: param_comma_list
     ;
 
 param_comma_list: type T_ID T_COMMA param_comma_list
-    { $$ = new Node(); Node* node = new Node(PARAM, lineno); node->addChild($1); node->addChild(new Node(ID, $2)); $$->addChild(node); $$->addChild($4);}
+    { $$ = new Node(LIST); Node* node = new MethodParamNode(lineno); node->addChild($1); node->addChild(new IdNode($2)); $$->addChild(node); $$->addChild($4);}
     | type T_ID
-    { $$ = new Node(PARAM, lineno); $$->addChild($1); $$->addChild(new Node(ID, $2)); }
+    { $$ = new MethodParamNode(lineno); $$->addChild($1); $$->addChild(new IdNode($2)); }
     ;
 
 type: T_INTTYPE
-    { $$ = new Node(TYPE, "int"); }
+    { $$ = new TypeNode("int"); }
     | T_BOOLTYPE
-    { $$ = new Node(TYPE, "bool"); }
+    { $$ = new TypeNode("bool"); }
     ;
 
 block: T_LCB var_decl_list statement_list T_RCB
-    { $$ = new Node(BLOCK); $$->addChild($2); $$->addChild($3); }
+    { $$ = new BlockNode(); $$->addChild($2); $$->addChild($3); }
 
 method_block: T_LCB var_decl_list statement_list T_RCB
-    { $$ = new Node(BLOCK); $$->addChild($2); $$->addChild($3); }
+    { $$ = new BlockNode(); $$->addChild($2); $$->addChild($3); }
 
 var_decl_list: var_decl var_decl_list
     { $$ = new Node(); $$->addChild($1); $$->addChild($2); }
@@ -166,17 +167,17 @@ var_decl_list: var_decl var_decl_list
     { $$ = NULL; }
     ;
 
-var_decl: var_list T_SEMICOLON
-    { $$ = $1; }
+var_decl: type var_list T_SEMICOLON
+    { $$ = new VarDeclNode(lineno); $$->addChild($1); $$->addChild($2);}
 
 var_list: var_list T_COMMA T_ID
-    { $$ = new Node(); $$->addChild($1); $$->addChild(new Node(ID, $3)); }
+    { $$ = new Node(LIST); $$->addChild($1); $$->addChild(new IdNode($3)); }
     | type T_ID
-    { $$ = new Node(); $$->addChild($1); $$->addChild(new Node(ID, $2)); }
+    { $$ = new Node(LIST); $$->addChild($1); $$->addChild(new IdNode($2)); }
     ;
 
 statement_list: statement statement_list
-    { $$ = new Node(); $$->addChild($1); $$->addChild($2); }
+    { $$ = new Node(LIST_NEW_LINE); $$->addChild($1); $$->addChild($2); }
     | /* empty */
     { $$ = NULL; }
     ;
@@ -208,21 +209,21 @@ statement: assign T_SEMICOLON
     ;
 
 assign: T_ID T_ASSIGN expr
-    { $$ = new Node(ASSIGN_STATEMENT); $$->addChild(new Node(ID, $1)); $$->addChild($3); }
+    { $$ = new AssignStatementNode(); $$->addChild(new IdNode($1)); $$->addChild($3); }
     | T_ID T_LSB expr T_RSB T_ASSIGN expr
-    { $$ = new Node(ASSIGN_STATEMENT); $$->addChild(new Node(ID, $1)); $$->addChild($3); $$->addChild($6); }
+    { $$ = new AssignStatementNode(); $$->addChild(new IdNode($1)); $$->addChild($3); $$->addChild($6); }
     ;
 
 method_call: T_ID T_LPAREN method_arg_list T_RPAREN
-    { $$ = new Node(METHOD_CALL); $$->addChild(new Node(ID, $1)); $$->addChild($3); }
+    { $$ = new MethodCallNode(); $$->addChild(new IdNode($1)); $$->addChild($3); }
     | T_ID T_LPAREN T_RPAREN
-    { $$ = new Node(METHOD_CALL); $$->addChild(new Node(ID, $1)); }
+    { $$ = new MethodCallNode(); $$->addChild(new IdNode($1)); }
     ;
 
 method_arg_list: method_arg
     { $$ = $1; }
     | method_arg T_COMMA method_arg_list
-    { $$ = new Node(); $$->addChild($1); $$->addChild($3); }
+    { $$ = new Node(LIST); $$->addChild($1); $$->addChild($3); }
     ;
 
 method_arg: expr
@@ -288,17 +289,17 @@ expr: rvalue
     ;
 
 constant: T_INTCONSTANT
-    { $$ = new Node(CONSTANT, $1); }
+    { $$ = new ConstantNode($1); }
     | T_CHARCONSTANT
-    { $$ = new Node(CONSTANT, $1); }
+    { $$ = new ConstantNode($1); }
     | bool_constant
     { $$ = $1; }
     ;
 
 bool_constant: T_TRUE
-    { $$ = new Node(CONSTANT, "true"); }
+    { $$ = new ConstantNode("true"); }
     | T_FALSE
-    { $$ = new Node(CONSTANT, "false"); }
+    { $$ = new ConstantNode("false"); }
     ;
 
 %%
