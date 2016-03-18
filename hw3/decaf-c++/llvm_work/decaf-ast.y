@@ -161,13 +161,12 @@ type: T_INTTYPE
     { $$ = boolTy; }
     ;
 
-begin_block: T_LCB { symbolTableList.push_back(SymbolTable symtb); }
-
-end_block:   T_RCB { symbolTableList.pop_back(); }
-
 block: begin_block var_decl_list statement_list end_block     
 { $$ = new BlockAST((decafStmtList *)$2, (decafStmtList *)$3); }
 
+begin_block: T_LCB { symbolTableList.push_back(new SymbolTable()); }
+
+end_block:   T_RCB { symbolTableList.pop_back(); }
 
 method_block: T_LCB var_decl_list statement_list T_RCB
     { $$ = new MethodBlockAST((decafStmtList *)$2, (decafStmtList *)$3); }
