@@ -15,6 +15,9 @@ using namespace std;
 bool printAST = false;
 #include "decaf-ast.cc"
 
+std::vector<SymbolTable*> symbolTableList;
+int symbolTableCounter;
+
 %}
 
 %union{
@@ -49,7 +52,7 @@ bool printAST = false;
 
 %%
 
-start: program
+start: program {symbolTableCounter = 0;}
 
 program: extern_list decafclass
     { 
@@ -158,9 +161,9 @@ type: T_INTTYPE
     { $$ = boolTy; }
     ;
 
-begin_block: T_LCB { }//syms.new_symtbl(); }
+begin_block: T_LCB { symbolTableList.push_back(SymbolTable symtb); }
 
-end_block:   T_RCB { }//syms.remove_symtbl(); }
+end_block:   T_RCB { symbolTableList.pop_back(); }
 
 block: begin_block var_decl_list statement_list end_block     
 { $$ = new BlockAST((decafStmtList *)$2, (decafStmtList *)$3); }
