@@ -63,6 +63,12 @@ class decafAST {
 public:
   virtual ~decafAST() {}
   virtual string str() { return string(""); }
+  int test() {return 9;}
+  void setName(string name){ IDname = name;}
+  string retName(){return IDname;}
+
+private:
+  string IDname;
 };
 
 string getString(decafAST *d) {
@@ -225,9 +231,10 @@ public:
 class VariableExprAST : public decafAST {
 	string Name;
 public:
-	VariableExprAST(string name) : Name(name) {}
-	string str() { return buildString1("VariableExpr", Name); }
+	VariableExprAST(string name) : Name(name) {} //this->setName("test");}
 	//const std::string &getName() const { return Name; }
+	string str() { return buildString1("VariableExpr", Name); }
+	const std::string &getName() const { return Name; }
 };
 
 /// MethodCallAST - call a function with some arguments

@@ -4,7 +4,6 @@
 #include <string>
 #include <cstdlib>
 #include "decafast-defs.h"
-#include "Scope.h"
 
 int yylex(void);
 int yyerror(char *); 
@@ -13,7 +12,7 @@ using namespace std;
 
 // print AST?
 bool printAST = false;
-
+//Scope scope(0);
 #include "decaf-ast.cc"
 
 %}
@@ -58,6 +57,7 @@ program: extern_list decafclass
 		if (printAST) {
 			cout << getString(prog) << endl;
 		}
+
         delete prog;
     }
 
@@ -159,7 +159,7 @@ type: T_INTTYPE
     ;
 
 block: T_LCB var_decl_list statement_list T_RCB
-    { $$ = new BlockAST((decafStmtList *)$2, (decafStmtList *)$3); }
+    { printf("end"); $$ = new BlockAST((decafStmtList *)$2, (decafStmtList *)$3); }
 
 method_block: T_LCB var_decl_list statement_list T_RCB
     { $$ = new MethodBlockAST((decafStmtList *)$2, (decafStmtList *)$3); }
@@ -217,7 +217,7 @@ statement: assign T_SEMICOLON
     ;
 
 assign: T_ID T_ASSIGN expr
-    { $$ = new AssignVarAST(*$1, $3); delete $1; printf(" //decl at line %i",lineno); }
+    { $$ = new AssignVarAST(*$1, $3); delete $1; std::cout << " //decl at line "<<lineno<<endl;}//$3->getName()); }
     | T_ID T_LSB expr T_RSB T_ASSIGN expr
     { $$ = new AssignArrayLocAST(*$1, $3, $6); delete $1; }
     ;
@@ -235,7 +235,7 @@ method_arg_list: method_arg
     ;
 
 method_arg: expr
-    { $$ = $1; }
+    { $$ = $1;}
     | T_STRINGCONSTANT
     { $$ = new StringConstAST(*$1); delete $1; }
     ;
@@ -247,7 +247,7 @@ assign_comma_list: assign
     ;
 
 rvalue: T_ID
-    { $$ = new VariableExprAST(*$1); delete $1; }
+    { VariableExprAST *var = new VariableExprAST(*$1); cout <<"var" << var->getName()<<endl; $$=var; delete $1; }
     | T_ID T_LSB expr T_RSB
     { $$ = new ArrayLocExprAST(*$1, $3); delete $1; }
     ;
