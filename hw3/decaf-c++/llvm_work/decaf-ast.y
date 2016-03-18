@@ -157,11 +157,11 @@ type: T_INTTYPE
     | T_BOOLTYPE
     { $$ = boolTy; }
     ;
+/*
+begin_block: T_LCB {  }//syms.new_symtbl(); }
 
-begin_block: T_LCB { }//syms.new_symtbl(); }
-
-end_block: T_RCB { }//syms.remove_symtbl(); }
-
+end_block:   T_RCB { }//syms.remove_symtbl(); }
+*/
 block: T_LCB var_decl_list statement_list T_RCB     
 { $$ = new BlockAST((decafStmtList *)$2, (decafStmtList *)$3); }
 
