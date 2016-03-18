@@ -8,6 +8,16 @@
 #include <sstream>
 #include <vector>
 #include "Scope.h"
+#include "llvm-3.7/llvm/IR/IRBuilder.h"
+#include "llvm-3.7/llvm/IR/LLVMContext.h"
+#include "llvm-3.7/llvm/IR/Module.h"
+#include "llvm-3.7/llvm/IR/DerivedTypes.h"
+#include "llvm/Analysis/Verifier.h"
+
+//LLVM stuff
+
+static Module *TheModule;
+static IRBuilder<> Builder(getGlobalContext());
 
 std::string to_string(int num)
 {
@@ -16,7 +26,7 @@ std::string to_string(int num)
 	return convert.str();
 }
 
-char* append(char* str1, char* str2) 
+char* append(char* str1, char* str2)
 {
 	size_t length = strlen(str1) + strlen(str2) + 1;
     	char* final_str = (char*) malloc(length);
@@ -25,6 +35,7 @@ char* append(char* str1, char* str2)
 }
 
 namespace AST
+namespace llvm
 {
 
 enum Type
@@ -82,7 +93,7 @@ class Node
 			lineNumber(-1)
 		{
 		}
-		
+
 		Node(Type type, std::string* value) :
 			type(type),
 			value(*value),
@@ -96,21 +107,21 @@ class Node
 			lineNumber(lineNum)
 		{
 		}
-		
+
 		Node(Type type) :
 			type(type),
 			value(""),
 			lineNumber(-1)
 		{
 		}
-		
+
 		Node() :
 			type(NONE),
 			value(""),
 			lineNumber(-1)
 		{
 		}
-		
+
 		~Node()
 		{
 		}
@@ -122,9 +133,9 @@ class Node
 				children[i]->generateSymbols();
 			}
 		}
-		
+
 		virtual std::string toString()
-		{			
+		{
 			std::string nodeStr = "";
 			std::string separator = "";
 
@@ -145,10 +156,12 @@ class Node
 					nodeStr += separator;
 				}
 			}
-			
+
 			return nodeStr;
 		}
-		
+		// LLVM base AST has codegen=0;
+        virtual Value *codegen()=0;
+
 		void addChild(Node* child)
 		{
 			if(child != NULL)
@@ -156,7 +169,7 @@ class Node
 				children.push_back(child);
 			}
 		}
-		
+
 		Type type;
 		int lineNumber;
 		std::string value;
@@ -187,7 +200,7 @@ class ProgramNode : public Node
 
 		std::string toString()
 		{
-			std::string nodeStr = ""; 
+			std::string nodeStr = "";
 			for(int i = 0; i < children.size(); i++)
 			{
 				nodeStr += children[i]->toString() + "";
@@ -245,6 +258,15 @@ class ClassNode : public Node
 			nodeStr += "}";
 			return nodeStr;
 		}
+		// Gets the Inode string of
+		static std::string ClassName()
+		{
+		return childern[0]->toString();
+
+
+
+		}
+		virtual Value *codegen();
 };
 
 class FieldDeclNode : public Node
@@ -259,11 +281,11 @@ class FieldDeclNode : public Node
 			if(children.size() == 1)
 			{
 				SCOPE::addDefinition(children[0]->toString(), Symbol("", lineNumber));
-			}	
+			}
 			else if(children.size() == 2)
 			{
 				SCOPE::addDefinition(children[1]->toString(), Symbol("", lineNumber));
-			}	
+			}
 			else
 			{
 				SCOPE::addDefinition(children[1]->toString(), Symbol(children[2]->toString(), lineNumber));
@@ -275,15 +297,15 @@ class FieldDeclNode : public Node
 			if(children.size() == 1)
 			{
 				return children[0]->toString();
-			}	
+			}
 			else if(children.size() == 2)
 			{
 				return children[0]->toString() + " " + children[1]->toString();
-			}	
+			}
 			else
 			{
 				return children[0]->toString() + " " + children[1]->toString() + " = " + children[2]->toString();
-			}	
+			}
 		}
 };
 
@@ -304,11 +326,11 @@ class FieldArrayDeclNode : public Node
 			if(children.size() == 3)
 			{
 				return children[0]->toString() + " " + children[1]->toString() + "[" + children[2]->toString() + "]";
-			}	
+			}
 			else
 			{
 				return children[0]->toString()+ "[" + children[1]->toString() + "]";
-			}	
+			}
 		}
 };
 
@@ -362,6 +384,9 @@ public:
 	{
 		return value;
 	}
+
+	 virtual Value *codegen();
+
 };
 
 class IdNode : public Node
@@ -396,6 +421,7 @@ public:
 	{
 		return value;
 	}
+	virtual  Value *codegen();
 };
 
 class MethodParamNode : public Node
@@ -433,7 +459,7 @@ class BlockNode : public Node
 		std::string toString()
 		{
 			SCOPE::enterScope();
-			
+
 			std::string nodeStr = "";
 			if(startOnNewLine)
 			{
@@ -453,7 +479,7 @@ class BlockNode : public Node
 			SCOPE::leaveScope();
 			SCOPE::nextScope();
 			nodeStr += indentation() + "}\n";
-			
+
 			return nodeStr;
 		}
 
@@ -563,7 +589,7 @@ class MethodCallNode : public Node
 					}
 
 					nodeStr += list->children[0]->toString() + ") " + comment + ";\n";
-	
+
 					return nodeStr;
 				}
 				else if(list->children.size() == 3 && list->children[0]->type == RVALUE)
@@ -646,7 +672,7 @@ class ForStatementNode : public Node
 		std::string toString()
 		{
 			SCOPE::enterScope();
-			std::string nodeStr = indentation() + "while(" + children[0]->toString() + ";" 
+			std::string nodeStr = indentation() + "while(" + children[0]->toString() + ";"
 				+ children[1]->toString() + ";" + children[2]->toString() + ")" + children[3]->toString();
 			SCOPE::leaveScope();
 			SCOPE::nextScope();
@@ -769,6 +795,354 @@ class UnaryExprNode : public Node
 			return value + children[0]->toString();
 		}
 };
+
+//LLVM Codegen methods
+
+llvm::Type *getLLVMType(TypeNode t) {
+
+
+ switch (t.value) {
+ 	case "Void": return Builder.getVoidTy();
+ 	case "int": return Builder.getInt32Ty();
+ 	case "bool": return Builder.getInt1Ty();
+ 	case "string": return Builder.getInt8PtrTy();
+  default: throw runtime_error("unknown type");
+ }
+
+
+
+
+}
+
+
+
+
+
+//Codegen implementation for All the ASTs
+Value *ClassNode::codegen(){
+
+
+ TheModule = new Module(ClassNode::ClassName(),getGlobalContext());
+  BasicBlock* ClassBlock = BasicBlock::BasicBlock();
+  return ClassBlock;
+
+
+
+
+
+}
+/*
+
+Value *ExternAST::codegen(){
+llvm::Type externtype = *getLLVMType(ReturnType);
+
+*/
+
+
+
+
+}
+llvm::Value *ErrorV(const char *Str) { Error(Str); return 0; }
+
+Value *ConstantNode::codegen() {
+
+	return constantFP::get(getGlobalContext(),APfloat(ConstanNode::value));
+}
+
+Value *VariableExprAST::codegen(){
+	//Value *V ; // Get from hash table
+	// temp variable without hashtable
+	Value *V = 10;
+	if (!V){return ErrorV("unknown variable");
+
+	}
+
+	return Builder.CreateLoad(V,Name);
+
+}
+
+
+//Binary Operations:
+llvm:: Value *BinaryExprAST::codegen() {
+  Value *L = LHS->codegen();
+  Value *R = RHS->codegen();
+  if (L == 0 || R == 0) return 0;
+
+  switch (Op) {
+  case '+': return Builder.CreateFAdd(L, R, "addtmp"); break;
+  case '-': return Builder.CreateFSub(L, R, "subtmp"); break;
+  case '*': return Builder.CreateFMul(L, R, "multmp"); break;
+  case '/': return BUilder.CreateFDiv(L, R, "divtmp"); break;
+  case '%': return Builder.CreateFMod(L,R,"modtmp");   break;
+
+  case '<<':  return Builder.CreateShl(L,R,"<<");break;
+  case '>>':  return Builder.CreateShr(L,R,">>");break;
+
+  case '<':
+    L = Builder.CreateFCmpULT(L, R, "cmptmp");
+    // Convert bool 0/1 to double 0.0 or 1.0
+    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
+                                "booltmp");
+    break;
+  case '<=':
+    L=Builder.CreateCmpULTE(L,R,"cmptmp");
+     // Convert bool 0/1 to double 0.0 or 1.0
+    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
+                                "booltmp");
+     break;
+  case '>':
+    L = Builder.CreateFCmpUGT(L, R, "cmptmp");
+    // Convert bool 0/1 to double 0.0 or 1.0
+    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
+                                "booltmp");
+  case '>=':
+    L=Builder.CreateCmpUGE(L,R,"cmptmp");
+     // Convert bool 0/1 to double 0.0 or 1.0
+    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
+                                "booltmp");
+      break;
+  case '==':
+    L = Builder.CreateFCmpUEQ(L, R, "cmptmp");
+    // Convert bool 0/1 to double 0.0 or 1.0
+    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
+                                "booltmp");
+      break;
+  case '!=':
+      L = Builder.CreateFCmpUNE(L, R, "cmptmp");
+    // Convert bool 0/1 to double 0.0 or 1.0
+    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
+                                "booltmp");
+      break;
+  case '&&':
+     return Builder.CreateAnd(L,R,"andtmp");
+     // Convert bool 0/1 to double 0.0 or 1.0
+    //return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
+                                "booltmp");
+
+  case '||':
+      return Builder.CreateOr(L,R,"ortmp");
+     // Convert bool 0/1 to double 0.0 or 1.0
+    //return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
+                                "booltmp");
+       break;
+  default: return ErrorV("invalid binary operator");
+}
+
+//expr
+llvm:: Value *ExprAST::codegen() {
+
+
+}
+
+
+// function to convert decafType to llvm Type
+
+
+
+
+llvm::Value Type *ExternAST::codgen(){
+
+	return *getLLVMType(ReturnType);
+}
+
+
+
+
+ static llvm::Value *StringConstAST::Codegen() {
+  const char *s = StringConst.c_str();
+   llvm::Value *GS =
+		    Builder.CreateGlobalString(s, "globalstring");
+  return Builder.CreateConstGEP2_32(GS, 0, 0, "cast");
+}
+
+
+llvm::Type *BooleanAST::codgen(){
+
+//depends on implementation of string constant and boolean
+	return *getLLVMType(ReturnType);
+}
+
+
+
+// Declare a block of code
+llvm::Value*BlockAST::codegen(){
+    // BasicBlock is a Value type, used for branching, automatically execute statements in between, 1 = attach to parent block, 0 = at the end of the block
+    return llvm::BasicBlock::Create(getGlobalContext(),"BlockAST",1,0);
+
+}
+
+
+
+
+// Does methodcall using llvm when methodcall AST is created
+llvm:Value *MethodCallAST::codegen(){
+
+    // Check Module hash table to see if function is already declared
+    Function *ExistingFunc = TheModule->getFunction(Name);
+    // If not declared throw error
+    if(!ExistingFunc){
+
+        return ErrorV("Function is undeclared");
+    }
+    // if argument numbers are not accurate  throw error
+        if(ExistingFunc->args_size() !=args.size()){
+
+            return ErrorV("Error: does not contain the required arguments");
+
+
+
+
+    }
+    // Handle arguments passed in
+    std::vector<Value *> Params;
+    // Code from llvm.org tutorial to handle pararamters
+
+    for (unsigned i = 0, e = Params.size(); i !=e; ++i){
+
+        Params.push_back(Params[i]->codegen());
+            if (!Params.back())
+                return nullptr;
+
+
+    }
+    // Create the function call
+    return Builder.CreateCall(ExistingFunc,Params,"calltemp");
+
+
+
+
+
+}
+// codgen for function declaration
+llvm::Value *MethodDeclCAST::Codegen(){
+    // Convert return type to llvm type
+
+	TypedSymbolListAST *FunctionArgs;
+	MethodBlockAST *Block;
+	// Before creating function declartion, we must check to see if its previously declared ,if null = brand new function
+	// if not null create function, otherwise check for body
+
+
+
+	Function *ExistingFunc = TheModule->getFunction(Name);
+	// Create new Function
+	if(!ExistingFunc){
+    llvm::Type newType = *getLLVMType(ReturnType);
+    // convert argument list to llvm typed list
+    std::vector<llvm::Type*> args;
+    FunctionType ft = get(newType,args,false);
+    Function *F - Function::Create(ft,Function::ExternalLinkage,Name,TheModule);
+
+	//Create a block for the function
+	llvm::BasicBlock *BB = BasicBlock::Create(getGlobalContext(),Name,F);
+	BUilder.SetInsertPoint(BB);
+
+	// Add all arguments into hash table - * awaiing final implementation for Hash table
+
+	// Add return value to block?
+
+	if (Value *newType = Body->codegen()){
+
+        Builder.CreateRet(newType);
+
+        return F;
+
+
+	}
+
+	// If error
+
+	F->eraseFromParent();
+	return null;
+
+
+
+
+        }
+
+
+
+
+
+}
+//Codegen for return statemetn
+llvm::Value *ReturnStmtAST::codegen(){
+    // Should return the codegen of whatever is created inside that value , expr
+    // Not sure if should handle blocks and scopes
+
+    decafAST v = ReturnStmtAST.Value
+    return Builder.CreateRet(v.codegen());
+
+
+}
+
+
+// Codegen for variable assignment
+
+llvm::Value *AssignVarAST::codegen(){
+
+
+
+
+
+
+
+
+
+
+}
+/*
+Check if variable is declared in current scope table.
+
+    if( Hash table has variable already declared){
+         P8 :Create Variable with address location + assign the new value}
+         P2: Print out line number of where its first declared
+    else if(recursively check previous scope for declaration, use declaration from scope that its decalred) {
+
+        P8:Create Variable with address location + value from global
+        P2: Print out line number of where its first declared
+        }
+
+    if( Hash tables does not contain declaration ){
+       throw error;}
+
+}
+
+Value *NumberExprAST::codegen() {
+
+	return constantFP::get(getGlobalContext(),APfloat(val));
+}
+
+static llvm::Constant *StringConstAST::Codegen() {
+	//contents taken from LLVM cheat sheet
+  const char *s = StringConst.c_str();
+   llvm::Value *GS =
+		    Builder.CreateGlobalString(s, "globalstring");
+  return Builder.CreateConstGEP2_32(GS, 0, 0, "cast");
+}
+
+static llvm::Constant *CharConstAST::Codegen() {
+  const char c = CharConst;//needs to be whichever var is in the 'CharConst' class - may not need that c_str function since its just referencing a char
+   llvm::Value *GS =
+		    Builder.CreateGlobalString(c, "globalcharacter");
+  return Builder.CreateConstGEP2_32(GS, 0, 0, "cast");//not sure what this is doing, or if the vars need to be changed
+}
+
+/*Might not need this since numberexprast is doing the same. Keeping this for reference.
+static llvm::ConstantInt *IntConstAST::Codegen() {
+  return Builder.getInt32(intValue);//needs to get passsed in the local value found in IntConstAST...
+  //IRBuilder::getInt32 returns a ConstantInt
+}
+
+
+static llvm::Constant *BoolExprAST::codgen(){
+	return Builder.getInt1(Val);
+	//IRBuilder::getInt1 returns a ConstantInt, but we can use Constant as per her LLVM cheatsheet
+}
+
+
+
+*/
 
 }
 
