@@ -30,8 +30,8 @@ SymbolTable* getTable()
 	}
 }
 
-void addValue(std::string type, std::string value, int lineno){
-	getTable()->addDefinition(value, Symbol(type,value,lineno));
+void addValue(string type, string value, int lineno){
+	//getTable()->addDefinition(value, Symbol(type,value,lineno));
 	
 } 
 
@@ -164,14 +164,14 @@ param_list: param_comma_list
 
 param_comma_list: type T_ID T_COMMA param_comma_list
     { 
-        TypedSymbolListAST *tlist = (TypedSymbolListAST *)$4; 
+	addValue(*$2, TyString((decafType)$1), lineno);        
+	TypedSymbolListAST *tlist = (TypedSymbolListAST *)$4; 
         tlist->push_front(*$2, (decafType)$1); 
         $$ = tlist;
-	addValue(*$2, *$1, 2);
         delete $2;
     }
     | type T_ID
-    { $$ = new TypedSymbolListAST(*$2, (decafType)$1); addValue(*$2, *$1, 2); delete $2; }
+    { $$ = new TypedSymbolListAST(*$2, (decafType)$1); addValue(*$2, TyString((decafType)$1), lineno);  delete $2; }
     ;
 
 type: T_INTTYPE
