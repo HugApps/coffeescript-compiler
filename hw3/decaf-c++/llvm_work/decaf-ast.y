@@ -31,10 +31,19 @@ SymbolTable* getTable()
 }
 
 void addValue(string type, string value, int lineno){
-	//getTable()->addDefinition(value, Symbol(type,value,lineno));
+	getTable()->addDefinition("value", Symbol("type","value",9));
 	
 } 
 
+int getLine(string value){
+	/*if(getTable()->containsDefinition(value)){
+		return getTable()->getDefinition(value).getLineNumber();	
+	}else{
+		return -1;
+	}*/
+	return 9;
+	
+}
 
 %}
 
@@ -243,7 +252,7 @@ statement: assign T_SEMICOLON
     ;
 
 assign: T_ID T_ASSIGN expr
-    { $$ = new AssignVarAST(*$1, $3); delete $1; std::cout << " //decl at line " <<lineno;}//$3->getName()); }
+    { $$ = new AssignVarAST(*$1, $3); delete $1; std::cout << " //decl at line " << getLine("value");}//$3->getName()); }
     | T_ID T_LSB expr T_RSB T_ASSIGN expr
     { $$ = new AssignArrayLocAST(*$1, $3, $6); delete $1; }
     ;
