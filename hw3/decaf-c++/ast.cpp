@@ -8,13 +8,14 @@
 #include <sstream>
 #include <vector>
 #include "Scope.h"
-#include "llvm-3.7/llvm/IR/IRBuilder.h"
-#include "llvm-3.7/llvm/IR/LLVMContext.h"
-#include "llvm-3.7/llvm/IR/Module.h"
-#include "llvm-3.7/llvm/IR/DerivedTypes.h"
+#include "llvm-3.4/llvm/IR/IRBuilder.h"
+#include "llvm-3.4/llvm/IR/LLVMContext.h"
+#include "llvm-3.4/llvm/IR/Module.h"
+#include "llvm-3.4/llvm/IR/DerivedTypes.h"
 #include "llvm/Analysis/Verifier.h"
 
 //LLVM stuff
+using namespace llvm;
 
 static Module *TheModule;
 static IRBuilder<> Builder(getGlobalContext());
@@ -34,10 +35,9 @@ char* append(char* str1, char* str2)
 	return final_str;
 }
 
-namespace AST
-namespace llvm
-{
 
+namespace AST
+{
 enum Type
 {
 	PROGRAM,
@@ -159,8 +159,11 @@ class Node
 
 			return nodeStr;
 		}
-		// LLVM base AST has codegen=0;
-        virtual Value *codegen()=0;
+
+        virtual Value* codegen()
+        {
+
+        }
 
 		void addChild(Node* child)
 		{
@@ -258,15 +261,19 @@ class ClassNode : public Node
 			nodeStr += "}";
 			return nodeStr;
 		}
+
 		// Gets the Inode string of
-		static std::string ClassName()
+		std::string getClassName()
 		{
-		return childern[0]->toString();
-
-
-
+			return children[0]->toString();
 		}
-		virtual Value *codegen();
+
+		Value* codegen(){
+			//TheModule = new Module(ClassNode::ClassName(),getGlobalContext());
+			//BasicBlock* ClassBlock = BasicBlock::BasicBlock();
+			//return ClassBlock;
+			return NULL;
+		}
 };
 
 class FieldDeclNode : public Node
@@ -385,7 +392,20 @@ public:
 		return value;
 	}
 
-	 virtual Value *codegen();
+	Value* codegen()
+	{
+		return NULL;
+	}
+
+	static llvm::Type* getLLVMType(TypeNode* t) {
+		 /*switch (t->value) {
+		 	case "Void": return Builder.getVoidTy();
+		 	case "int": return Builder.getInt32Ty();
+		 	case "bool": return Builder.getInt1Ty();
+		 	case "string": return Builder.getInt8PtrTy();
+		  default: throw runtime_error("unknown type");*/
+		 return NULL;
+	 }
 
 };
 
@@ -421,7 +441,11 @@ public:
 	{
 		return value;
 	}
-	virtual  Value *codegen();
+
+	Value* codegen() {
+		//return constantFP::get(getGlobalContext(),APfloat(ConstanNode::value));
+		return NULL;
+	}
 };
 
 class MethodParamNode : public Node
@@ -529,6 +553,18 @@ class VarDeclNode : public Node
 			{
 				return children[0]->toString();
 			}
+		}
+
+		Value* codegen(){
+			//Value *V ; // Get from hash table
+			// temp variable without hashtable
+			/*Value *V = 10;
+			if (!V){return ErrorV("unknown variable");
+
+			}
+
+			return Builder.CreateLoad(V,Name);*/
+			return NULL;
 		}
 };
 
@@ -798,69 +834,18 @@ class UnaryExprNode : public Node
 
 //LLVM Codegen methods
 
-llvm::Type *getLLVMType(TypeNode t) {
 
-
- switch (t.value) {
- 	case "Void": return Builder.getVoidTy();
- 	case "int": return Builder.getInt32Ty();
- 	case "bool": return Builder.getInt1Ty();
- 	case "string": return Builder.getInt8PtrTy();
-  default: throw runtime_error("unknown type");
- }
-
-
-
-
-}
-
-
-
-
+//llvm::Value *ErrorV(const char *Str) { Error(Str); return 0; }
 
 //Codegen implementation for All the ASTs
-Value *ClassNode::codegen(){
 
-
- TheModule = new Module(ClassNode::ClassName(),getGlobalContext());
-  BasicBlock* ClassBlock = BasicBlock::BasicBlock();
-  return ClassBlock;
-
-
-
-
-
-}
 /*
 
 Value *ExternAST::codegen(){
 llvm::Type externtype = *getLLVMType(ReturnType);
 
 */
-
-
-
-
-}
-llvm::Value *ErrorV(const char *Str) { Error(Str); return 0; }
-
-Value *ConstantNode::codegen() {
-
-	return constantFP::get(getGlobalContext(),APfloat(ConstanNode::value));
-}
-
-Value *VariableExprAST::codegen(){
-	//Value *V ; // Get from hash table
-	// temp variable without hashtable
-	Value *V = 10;
-	if (!V){return ErrorV("unknown variable");
-
-	}
-
-	return Builder.CreateLoad(V,Name);
-
-}
-
+/*
 
 //Binary Operations:
 llvm:: Value *BinaryExprAST::codegen() {
@@ -1143,6 +1128,7 @@ static llvm::Constant *BoolExprAST::codgen(){
 
 
 */
+
 
 }
 

@@ -29,12 +29,11 @@ Node* root = NULL;
 
 %token T_AND T_ASSIGN T_BREAK T_CLASS T_COMMENT T_COMMA T_CONTINUE T_DIV T_DOT T_ELSE T_EQ T_EXTENDS T_EXTERN
 %token T_FOR T_GEQ T_GT T_IF T_LCB T_LEFTSHIFT T_LEQ T_LPAREN T_LSB T_LT T_MINUS T_MOD T_MULT T_NEQ T_NEW T_NOT
-%token T_NULL T_OR T_PLUS T_RCB T_RETURN T_RIGHTSHIFT T_RPAREN T_RSB T_STRINGTYPE
+%token T_NULL T_OR T_PLUS T_RCB T_RETURN T_RIGHTSHIFT T_RPAREN T_RSB T_STRINGTYPE T_SEMICOLON
 %token T_VOID T_WHILE T_WHITESPACE
 %token T_INTTYPE T_BOOLTYPE
 
 %token <sval> T_ID T_STRINGCONSTANT T_CHARCONSTANT T_INTCONSTANT T_FALSE T_TRUE 
-%token <decaftype> T_SEMICOLON 
 %type <node> type method_type extern_type
 %type <node> rvalue expr constant bool_constant method_call method_arg method_arg_list assign assign_comma_list
 %type <node> block method_block statement statement_list var_decl_list var_decl var_list param_list param_comma_list
@@ -171,7 +170,7 @@ var_decl_list: var_decl var_decl_list
     ;
 
 var_decl: var_list T_SEMICOLON
-    { $$ = new DeclarationNode(lineno); $$->addChild($1); $$->addChild(new SpaceNode($2));}
+    { $$ = new DeclarationNode(lineno); $$->addChild($1); }
 
 var_list: var_list T_COMMA T_ID
     { $$ = new Node(LIST); $$->addChild($1); Node* node = new VarDeclNode(lineno); node->addChild(new IdNode($3)); $$->addChild(node);}

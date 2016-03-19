@@ -53,7 +53,7 @@ string *process_token(const char *str) {
 
 void process_ws() {
   tokenpos += yyleng;
-  whitespace = string(yytext);
+  whitespace = remove_newlines(string(yytext));
 }
 
 int process_semicolon() {
@@ -180,7 +180,7 @@ return                     { return T_RETURN; }
 >>                         { return T_RIGHTSHIFT; }
 \)                         { return T_RPAREN; }
 \]                         { return T_RSB; }
-\;[\t\r\n\a\v\b ]+         { yylval.decaftype = process_semicolon(); return T_SEMICOLON; }
+\;                         { return T_SEMICOLON; }
 string                     { return T_STRINGTYPE; }
 \"([^\n\"\\]*{stresc}?)*\" { yylval.sval = process_string(yytext); return T_STRINGCONSTANT; }
 true                       { return T_TRUE; }
