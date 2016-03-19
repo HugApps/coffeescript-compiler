@@ -31,16 +31,17 @@ SymbolTable* getTable()
 }
 
 void addValue(string type, string value, int lineno){
-	getTable()->addDefinition(value, Symbol(type,value,lineno));
+	getTable()->addDefinition("value", Symbol("type","value",9));
 	
 } 
 
 int getLine(string value){
-	if(getTable()->containsDefinition(value)){
+	/*if(getTable()->containsDefinition(value)){
 		return getTable()->getDefinition(value).getLineNumber();	
 	}else{
 		return -1;
-	}	
+	}*/
+	return 9;
 	
 }
 
