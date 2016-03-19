@@ -18,6 +18,24 @@ bool printAST = false;
 std::vector<SymbolTable*> symbolTableList;
 int symbolTableCounter;
 
+SymbolTable* getTable()
+{
+	if (symbolTableCounter < symbolTableList.size())
+	{
+		return symbolTableList[symbolTableCounter];
+	}
+	else
+	{
+		return NULL;
+	}
+}
+
+void addValue(std::string type, std::string value, int lineno){
+	getTable()->addDefinition(value, Symbol(type,value,lineno));
+	
+} 
+
+
 %}
 
 %union{
@@ -149,10 +167,11 @@ param_comma_list: type T_ID T_COMMA param_comma_list
         TypedSymbolListAST *tlist = (TypedSymbolListAST *)$4; 
         tlist->push_front(*$2, (decafType)$1); 
         $$ = tlist;
+	addValue(*$2, *$1, 2);
         delete $2;
     }
     | type T_ID
-    { $$ = new TypedSymbolListAST(*$2, (decafType)$1); delete $2; }
+    { $$ = new TypedSymbolListAST(*$2, (decafType)$1); addValue(*$2, *$1, 2); delete $2; }
     ;
 
 type: T_INTTYPE
@@ -164,9 +183,9 @@ type: T_INTTYPE
 block: begin_block var_decl_list statement_list end_block     
 { $$ = new BlockAST((decafStmtList *)$2, (decafStmtList *)$3); }
 
-begin_block: T_LCB { symbolTableList.push_back(new SymbolTable()); }
+begin_block: T_LCB { symbolTableCounter++; symbolTableList.push_back(new SymbolTable()); }
 
-end_block:   T_RCB { symbolTableList.pop_back(); }
+end_block:   T_RCB { symbolTableCounter--; symbolTableList.pop_back(); }
 
 method_block: T_LCB var_decl_list statement_list T_RCB
     { $$ = new MethodBlockAST((decafStmtList *)$2, (decafStmtList *)$3); }
@@ -224,7 +243,7 @@ statement: assign T_SEMICOLON
     ;
 
 assign: T_ID T_ASSIGN expr
-    { $$ = new AssignVarAST(*$1, $3); delete $1; std::cout << " //decl at line "<<lineno;}//$3->getName()); }
+    { $$ = new AssignVarAST(*$1, $3); delete $1; std::cout << " //decl at line " <<lineno;}//$3->getName()); }
     | T_ID T_LSB expr T_RSB T_ASSIGN expr
     { $$ = new AssignArrayLocAST(*$1, $3, $6); delete $1; }
     ;

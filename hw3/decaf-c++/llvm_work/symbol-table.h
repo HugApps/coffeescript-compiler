@@ -11,13 +11,14 @@ using namespace std;
 class Symbol
 {
 public:
-	Symbol(std::string value, int lineNumber) :
+	Symbol(string type, string value, int lineNumber) :
 		_value(value),
+		_type(type),
 		_lineNumber(lineNumber)
 	{
 	}
 
-	Symbol(std::string value) :
+	Symbol(string value) :
 		_value(value),
 		_lineNumber(-1)
 	{
@@ -27,9 +28,14 @@ public:
 	{
 	}
 
-	std::string getValue()
+	string getValue()
 	{
 		return _value;
+	}
+
+	string getType()
+	{
+		return _type;
 	}
 
 	int getLineNumber()
@@ -38,7 +44,8 @@ public:
 	}
 
 private:
-	std::string _value;
+	string _value;
+	string _type;
 	int _lineNumber;
 };
 
@@ -53,19 +60,19 @@ public:
 	{
 	}
 
-	void addDefinition(std::string key, Symbol value)
+	void addDefinition(string key, Symbol value)
 	{
-		_symbols.insert(std::pair<std::string, Symbol>(key, value));
+		_symbols.insert(pair<string, Symbol>(key, value));
 	}
 
-	Symbol& getDefinition(std::string key)
+	Symbol& getDefinition(string key)
 	{
 		return _symbols.at(key);
 	}
 
-	bool containsDefinition(std::string key)
+	bool containsDefinition(string key)
 	{
-		std::unordered_map<std::string, Symbol>::iterator it = _symbols.find(key);
+		std::unordered_map<string, Symbol>::iterator it = _symbols.find(key);
 		if (it == _symbols.end())
 			return false;
 		else
@@ -73,7 +80,8 @@ public:
 	}
 
 private:
-	std::unordered_map<std::string, Symbol> _symbols;
+	std::unordered_map<string, Symbol> _symbols;
+	//need to deal with associating value and type and finding it on both accounts
 };
 
 #endif
