@@ -37,17 +37,17 @@ $(llvmtargets): %: %.y
 	$(mv) $@.tab.c $@.tab.cc
 	flex -o$@.lex.cc $@.lex
 	gcc -g -c decaf-stdlib.c
-	g++ -o $(bindir)/$@ $@.tab.cc $@.lex.cc decaf-stdlib.o -Wl,--no-as-needed `llvm-config --cppflags --ldflags --libs core native` -l$(yacclib) -l$(lexlib)
+	g++ -o $(bindir)/$@ $@.tab.cc $@.lex.cc decaf-stdlib.o -Wl,--no-as-needed `llvm-config-3.3 --cppflags --ldflags --libs core native` -l$(yacclib) -l$(lexlib)
 	$(rm) $@.tab.h $@.tab.cc $@.lex.cc 
 
 $(llvmcpp): %: %.cc
 	@echo "using llvm to compile file:" $<
-	g++ -g $< -Wl,--no-as-needed `llvm-config --cppflags --ldflags --libs core jit native` -O3 -o $(bindir)/$@
+	g++ -g $< -Wl,--no-as-needed `llvm-config-3.3 --cppflags --ldflags --libs core jit native` -O3 -o $(bindir)/$@
 
 $(llvmfiles): %: %.ll
 	@echo "using llvm to compile file:" $<
 	llvm-as $<
-	`llvm-config --bindir`/llc -disable-cfi $@.bc
+	`llvm-config-3.3 --bindir`/llc -disable-cfi $@.bc
 	gcc $@.s decaf-stdlib.c -o $(bindir)/$@
 
 test: $(targets) $(cpptargets)

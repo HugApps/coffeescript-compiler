@@ -8,11 +8,11 @@
 #include <sstream>
 #include <vector>
 #include "Scope.h"
-#include "llvm-3.4/llvm/IR/IRBuilder.h"
-#include "llvm-3.4/llvm/IR/LLVMContext.h"
-#include "llvm-3.4/llvm/IR/Module.h"
-#include "llvm-3.4/llvm/IR/DerivedTypes.h"
-#include "llvm/Analysis/Verifier.h"
+#include "llvm-3.3/llvm/IR/IRBuilder.h"
+#include "llvm-3.3/llvm/IR/LLVMContext.h"
+#include "llvm-3.3/llvm/IR/Module.h"
+#include "llvm-3.3/llvm/IR/DerivedTypes.h"
+//#include "llvm-3.3/Analysis/Verifier.h"
 
 //LLVM stuff
 using namespace llvm;
