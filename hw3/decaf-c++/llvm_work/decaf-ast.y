@@ -196,7 +196,7 @@ begin_block: T_LCB { SCOPE::enterNewScope(); }
 
 end_block:   T_RCB { SCOPE::leaveScope(); }
 
-method_block: T_LCB var_decl_list statement_list T_RCB
+method_block: begin_block var_decl_list statement_list end_block
     { $$ = new MethodBlockAST((decafStmtList *)$2, (decafStmtList *)$3); }
 
 var_decl_list: var_decl var_decl_list
@@ -210,13 +210,14 @@ var_decl: var_list T_SEMICOLON
 
 var_list: var_list T_COMMA T_ID
     { 
+	SCOPE::addDefinition(*$3, Symbol(*$3,lineno));
         TypedSymbolListAST *tlist = (TypedSymbolListAST *)$1; 
         tlist->new_sym(*$3); 
         $$ = tlist;
-        delete $3;
+        //delete $3;
     }
     | type T_ID
-    { $$ = new TypedSymbolListAST(*$2, (decafType)$1); delete $2; }
+    { $$ = new TypedSymbolListAST(*$2, (decafType)$1); /*delete $2;*/ SCOPE::addDefinition(*$2, Symbol(*$2,lineno)); }
     ;
 
 statement_list: statement statement_list
@@ -252,7 +253,7 @@ statement: assign T_SEMICOLON
     ;
 
 assign: T_ID T_ASSIGN expr
-    { $$ = new AssignVarAST(*$1, $3); delete $1; std::cout << " //decl at line " << SCOPE::getDefinition(*$1).getLine();}//getLine("value");}//$3->getName()); }
+    { $$ = new AssignVarAST(*$1, $3); /*delete $1;*/ std::cout << " //decl at line " << SCOPE::getDefinition(*$1).getLine();  }//getLine("value");}//$3->getName()); }
     | T_ID T_LSB expr T_RSB T_ASSIGN expr
     { $$ = new AssignArrayLocAST(*$1, $3, $6); delete $1; }
     ;
