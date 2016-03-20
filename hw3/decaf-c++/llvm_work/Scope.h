@@ -29,6 +29,11 @@ public:
 		return _value;
 	}
 
+        int getLine()
+	{
+		return _lineNumber;
+	}
+
 private:
 	std::string _value;
 	int _lineNumber;
