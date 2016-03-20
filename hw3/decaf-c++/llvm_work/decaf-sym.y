@@ -4,7 +4,7 @@
 #include <string>
 #include <cstdlib>
 #include "decafast-defs.h"
-#include "symbol-table.h"
+#include "Scope.h"
 
 int yylex(void);
 int yyerror(char *); 
@@ -13,37 +13,8 @@ using namespace std;
 
 // print AST?
 bool printAST = false;
-#include "decaf-ast.cc"
+#include "decaf-sym.cc"
 
-std::vector<SymbolTable*> symbolTableList;
-int symbolTableCounter;
-
-SymbolTable* getTable()
-{
-	//cout << "counter # " << symbolTableCounter << " counter size " << symbolTableList.size() << endl;	
-	if (symbolTableCounter < symbolTableList.size())
-	{
-		return symbolTableList[symbolTableCounter];
-	}
-	else
-	{
-		return NULL;
-	}
-}
-
-void addValue(string type, string value, int lineno){
-	getTable()->addDefinition("value", Symbol("type","value",9));
-	
-} 
-
-int getLine(string value){
-	if(getTable()->containsDefinition("value")){
-		return 19;//return getTable()->getDefinition("value").getLineNumber();	
-	}else{
-		return -1;
-	}
-	
-}
 
 %}
 
@@ -79,7 +50,7 @@ int getLine(string value){
 
 %%
 
-start: program {symbolTableCounter = 0;}
+start: program {}
 
 program: extern_list decafclass
     { 
@@ -118,10 +89,13 @@ extern_type: T_STRINGTYPE
     | type
     { $$ = $1; }
     ;
+begin_block: T_LCB { SCOPE::enterNewScope(); }
 
-decafclass: T_CLASS T_ID T_LCB field_decl_list method_decl_list T_RCB
+end_block:   T_RCB { SCOPE::leaveScope(); }
+
+decafclass: T_CLASS T_ID begin_block field_decl_list method_decl_list end_block
     { $$ = new ClassAST(*$2, (FieldDeclListAST *)$4, (decafStmtList *)$5); delete $2; }
-    | T_CLASS T_ID T_LCB field_decl_list T_RCB
+    | T_CLASS T_ID begin_block field_decl_list end_block
     { $$ = new ClassAST(*$2, (FieldDeclListAST *)$4, new decafStmtList()); delete $2; }
     ;
 
@@ -134,7 +108,7 @@ field_decl_list: field_decl_list field_decl
 field_decl: field_list T_SEMICOLON
     { $$ = $1; }
     | type T_ID T_ASSIGN constant T_SEMICOLON
-    { $$ = new AssignGlobalVarAST((decafType)$1, *$2, $4); delete $2; }
+    { $$ = new AssignGlobalVarAST((decafType)$1, *$2, $4); SCOPE::addDefinition(*$2, Symbol(*$2,lineno)); delete $2; }
     ;
 
 field_list: field_list T_COMMA T_ID
@@ -142,9 +116,9 @@ field_list: field_list T_COMMA T_ID
     | field_list T_COMMA T_ID T_LSB T_INTCONSTANT T_RSB
     { FieldDeclListAST *flist = (FieldDeclListAST *)$1; flist->new_sym(*$3, $5); $$ = flist; delete $3; }
     | type T_ID
-    { $$ = new FieldDeclListAST(*$2, (decafType)$1, -1); delete $2; }
+    { $$ = new FieldDeclListAST(*$2, (decafType)$1, -1);  delete $2; }
     | type T_ID T_LSB T_INTCONSTANT T_RSB
-    { $$ = new FieldDeclListAST(*$2, (decafType)$1, $4); delete $2; }
+    { $$ = new FieldDeclListAST(*$2, (decafType)$1, $4);  delete $2; }
     ;
 
 method_decl_list: method_decl_list method_decl 
@@ -173,14 +147,14 @@ param_list: param_comma_list
 
 param_comma_list: type T_ID T_COMMA param_comma_list
     { 
-	addValue(*$2, TyString((decafType)$1), lineno);        
+	SCOPE::addDefinition(*$2, Symbol(*$2,lineno));
 	TypedSymbolListAST *tlist = (TypedSymbolListAST *)$4; 
         tlist->push_front(*$2, (decafType)$1); 
         $$ = tlist;
         delete $2;
     }
     | type T_ID
-    { $$ = new TypedSymbolListAST(*$2, (decafType)$1); addValue(*$2, TyString((decafType)$1), lineno);  delete $2; }
+    { $$ = new TypedSymbolListAST(*$2, (decafType)$1); SCOPE::addDefinition(*$2, Symbol(*$2,lineno)); delete $2; }
     ;
 
 type: T_INTTYPE
@@ -192,11 +166,7 @@ type: T_INTTYPE
 block: begin_block var_decl_list statement_list end_block     
 { $$ = new BlockAST((decafStmtList *)$2, (decafStmtList *)$3); }
 
-begin_block: T_LCB { symbolTableCounter++; symbolTableList.push_back(new SymbolTable()); }
-
-end_block:   T_RCB { symbolTableCounter--; symbolTableList.pop_back(); }
-
-method_block: T_LCB var_decl_list statement_list T_RCB
+method_block: begin_block var_decl_list statement_list end_block
     { $$ = new MethodBlockAST((decafStmtList *)$2, (decafStmtList *)$3); }
 
 var_decl_list: var_decl var_decl_list
@@ -210,13 +180,14 @@ var_decl: var_list T_SEMICOLON
 
 var_list: var_list T_COMMA T_ID
     { 
+	SCOPE::addDefinition(*$3, Symbol(*$3,lineno));
         TypedSymbolListAST *tlist = (TypedSymbolListAST *)$1; 
         tlist->new_sym(*$3); 
         $$ = tlist;
         delete $3;
     }
     | type T_ID
-    { $$ = new TypedSymbolListAST(*$2, (decafType)$1); delete $2; }
+    { $$ = new TypedSymbolListAST(*$2, (decafType)$1); SCOPE::addDefinition(*$2, Symbol(*$2,lineno)); delete $2; }
     ;
 
 statement_list: statement statement_list
@@ -252,7 +223,7 @@ statement: assign T_SEMICOLON
     ;
 
 assign: T_ID T_ASSIGN expr
-    { $$ = new AssignVarAST(*$1, $3); delete $1; std::cout << " //decl at line " << getLine("value");}//$3->getName()); }
+    { $$ = new AssignVarAST(*$1, $3); std::cout << " // using decl on line: " << SCOPE::getDefinition(*$1).getLine(); delete $1;  }
     | T_ID T_LSB expr T_RSB T_ASSIGN expr
     { $$ = new AssignArrayLocAST(*$1, $3, $6); delete $1; }
     ;
@@ -282,9 +253,9 @@ assign_comma_list: assign
     ;
 
 rvalue: T_ID
-    { $$ = new VariableExprAST(*$1); delete $1; }
+    { $$ = new VariableExprAST(*$1); std::cout << " // using decl on line: " << SCOPE::getDefinition(*$1).getLine(); delete $1; }
     | T_ID T_LSB expr T_RSB
-    { $$ = new ArrayLocExprAST(*$1, $3); delete $1; }
+    { $$ = new ArrayLocExprAST(*$1, $3); std::cout << " // using decl on line: " << SCOPE::getDefinition(*$1).getLine(); delete $1; }
     ;
 
 expr: rvalue

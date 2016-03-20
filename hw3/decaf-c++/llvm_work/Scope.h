@@ -52,7 +52,12 @@ public:
 
 	void addDefinition(std::string key, Symbol value)
 	{
+		if(this->containsDefinition(key)){
+			_symbols.erase(key); 		
+		
+		}
 		_symbols.insert(std::pair<std::string, Symbol>(key, value));
+		//need to check if symbol is already in there and remove that, and continue with inserting
 	}
 
 	Symbol& getDefinition(std::string key)

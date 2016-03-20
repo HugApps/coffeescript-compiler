@@ -9,7 +9,7 @@ mv=/bin/mv -f
 #cpptargets=expr-grammar
 #llvmcpp=kscope1
 #llvmfiles=add helloworld
-llvmtargets=decaf-ast
+llvmtargets=decaf-sym
 
 all: $(targets) $(cpptargets) $(llvmfiles) $(llvmtargets) $(llvmcpp)
 
