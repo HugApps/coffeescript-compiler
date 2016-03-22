@@ -46,8 +46,8 @@ $(llvmcpp): %: %.cc
 
 $(llvmfiles): %: %.ll
 	@echo "using llvm to compile file:" $<
-	llvm-as $<
-	`llvm-config --bindir`/llc -disable-cfi $@.bc
+	llvm-as-3.3 $<
+	`llvm-config-3.3 --bindir`/llc -disable-cfi $@.bc
 	gcc $@.s decaf-stdlib.c -o $(bindir)/$@
 
 test: $(targets) $(cpptargets)
