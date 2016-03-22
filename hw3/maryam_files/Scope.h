@@ -4,17 +4,21 @@
 #include <unordered_map>
 #include <vector>
 #include <assert.h>
+#include "llvm-3.3/llvm/IR/IRBuilder.h"
+#include "llvm-3.3/llvm/IR/LLVMContext.h"
+#include "llvm-3.3/llvm/IR/Module.h"
+#include "llvm-3.3/llvm/IR/DerivedTypes.h"
 
 class Symbol
 {
 public:
-	Symbol(std::string value, int lineNumber) :
+	Symbol(llvm::Value* value, int lineNumber) :
 		_value(value),
 		_lineNumber(lineNumber)
 	{
 	}
 
-	Symbol(std::string value) :
+	Symbol(llvm::Value* value) :
 		_value(value),
 		_lineNumber(-1)
 	{
@@ -24,7 +28,7 @@ public:
 	{
 	}
 
-	std::string getValue()
+	llvm::Value* getValue()
 	{
 		return _value;
 	}
@@ -35,7 +39,7 @@ public:
 	}
 
 private:
-	std::string _value;
+	llvm::Value* _value;
 	int _lineNumber;
 };
 

@@ -179,6 +179,13 @@ public:
 			return "VarDef(" + Sym + "," + TyString(Ty) + ")";
 		}
 	}
+
+	Value* codegen()
+	{
+		AllocaInst* Alloca = Builder.CreateAlloca(getLLVMType(Ty), 0, Sym.c_str());
+ 		SCOPE::addDefinition(Sym, Symbol(Alloca));
+ 		return Alloca;
+	}
 	//virtual string getName();
 };
 
@@ -212,6 +219,12 @@ public:
 		TypedSymbol *s = new TypedSymbol(sym, listType);
 		arglist.push_back(s);
 	}
+
+	list<TypedSymbol*>& getList()
+	{
+		return arglist;
+	}
+
 	string str() { return commaList<class TypedSymbol *>(arglist); }
 };
 
@@ -270,11 +283,12 @@ public:
 	VariableExprAST(string name) : Name(name) {}
 	string str() { return buildString1("VariableExpr", Name); }
 	Value* codegen() { 
-		/*Value* val = NamedValues[Name];
-		if(!val)
+		if(!SCOPE::containsDefinition(Name))
+		{
 			return ErrorV("Unknown variable name.");
-		return val;*/
-		return NULL;
+		}
+		Value* val = SCOPE::getDefinition(Name).getValue();
+		return Builder.CreateLoad(val, Name.c_str());
 	}
 };
 
@@ -451,6 +465,13 @@ public:
 	decafStmtList *getVars() { return Vars; }
 	decafStmtList *getStatements() { return Statements; }
 	string str() { return buildString2("Block", Vars, Statements); }
+
+	Value* codegen()
+	{
+		BasicBlock* BB = BasicBlock::Create(getGlobalContext(), "block", Builder.GetInsertBlock()->getParent());
+		Builder.SetInsertPoint(BB);
+		return BB;
+	}
 };
 
 /// MethodBlockAST - block for methods
@@ -548,6 +569,17 @@ public:
 		delete Block; 
 	}
 	string str() { return buildString4("Method", Name, TyString(ReturnType), FunctionArgs, Block); }
+
+	Value* codegen()
+	{
+		/*std::vector<Type*> varTypes;
+		for (list<decafAST*>::iterator i = FunctionArgs->getList().begin(); i != FunctionArgs->getList().end(); i++) { 
+			varTypes.push_back((*i)->codegen());
+			if(!params.back())
+				return NULL;
+		}*/
+			
+	}
 };
 
 /// AssignGlobalVarAST - assign value to a global variable
@@ -571,6 +603,13 @@ class FieldDecl : public decafAST {
 public:
 	FieldDecl(string name, decafType ty, int size) : Name(name), Ty(ty), Size(size) {}
 	string str() { return buildString3("FieldDecl", Name, TyString(Ty), (Size == -1) ? "Scalar" : "Array(" + convertInt(Size) + ")"); }
+	Value* codegen()
+	{
+		//AllocaInst* Alloca = Builder.CreateAlloca(getLLVMType(Ty), 0, Name.c_str());
+		Value* val = new GlobalVariable(getLLVMType(Ty), false, GlobalValue::CommonLinkage);
+ 		SCOPE::addDefinition(Name, Symbol(val));
+ 		return val;
+	}
 };
 
 class FieldDeclListAST : public decafAST {

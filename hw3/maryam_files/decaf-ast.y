@@ -108,7 +108,7 @@ field_decl_list: field_decl_list field_decl
 field_decl: field_list T_SEMICOLON
     { $$ = $1; }
     | type T_ID T_ASSIGN constant T_SEMICOLON
-    { $$ = new AssignGlobalVarAST((decafType)$1, *$2, $4); SCOPE::addDefinition(*$2, Symbol(*$2,lineno)); delete $2; }
+    { $$ = new AssignGlobalVarAST((decafType)$1, *$2, $4); delete $2; }
     ;
 
 field_list: field_list T_COMMA T_ID
@@ -147,14 +147,13 @@ param_list: param_comma_list
 
 param_comma_list: type T_ID T_COMMA param_comma_list
     { 
-	SCOPE::addDefinition(*$2, Symbol(*$2,lineno));
 	TypedSymbolListAST *tlist = (TypedSymbolListAST *)$4; 
         tlist->push_front(*$2, (decafType)$1); 
         $$ = tlist;
         delete $2;
     }
     | type T_ID
-    { $$ = new TypedSymbolListAST(*$2, (decafType)$1); SCOPE::addDefinition(*$2, Symbol(*$2,lineno)); delete $2; }
+    { $$ = new TypedSymbolListAST(*$2, (decafType)$1); delete $2; }
     ;
 
 type: T_INTTYPE
@@ -180,14 +179,13 @@ var_decl: var_list T_SEMICOLON
 
 var_list: var_list T_COMMA T_ID
     { 
-	SCOPE::addDefinition(*$3, Symbol(*$3,lineno));
         TypedSymbolListAST *tlist = (TypedSymbolListAST *)$1; 
         tlist->new_sym(*$3); 
         $$ = tlist;
         delete $3;
     }
     | type T_ID
-    { $$ = new TypedSymbolListAST(*$2, (decafType)$1); SCOPE::addDefinition(*$2, Symbol(*$2,lineno)); delete $2; }
+    { $$ = new TypedSymbolListAST(*$2, (decafType)$1); delete $2; }
     ;
 
 statement_list: statement statement_list
@@ -223,7 +221,7 @@ statement: assign T_SEMICOLON
     ;
 
 assign: T_ID T_ASSIGN expr
-    { $$ = new AssignVarAST(*$1, $3); std::cout << " // using decl on line: " << SCOPE::getDefinition(*$1).getLine(); delete $1;  }
+    { $$ = new AssignVarAST(*$1, $3); delete $1;  }
     | T_ID T_LSB expr T_RSB T_ASSIGN expr
     { $$ = new AssignArrayLocAST(*$1, $3, $6); delete $1; }
     ;
@@ -253,9 +251,9 @@ assign_comma_list: assign
     ;
 
 rvalue: T_ID
-    { $$ = new VariableExprAST(*$1); std::cout << " // using decl on line: " << SCOPE::getDefinition(*$1).getLine(); delete $1; }
+    { $$ = new VariableExprAST(*$1);  delete $1; }
     | T_ID T_LSB expr T_RSB
-    { $$ = new ArrayLocExprAST(*$1, $3); std::cout << " // using decl on line: " << SCOPE::getDefinition(*$1).getLine(); delete $1; }
+    { $$ = new ArrayLocExprAST(*$1, $3); delete $1; }
     ;
 
 expr: rvalue
