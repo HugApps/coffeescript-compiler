@@ -5,13 +5,46 @@
 #include <iostream>
 #include <sstream>
 
+#include "llvm-3.3/llvm/IR/IRBuilder.h"
+#include "llvm-3.3/llvm/IR/LLVMContext.h"
+#include "llvm-3.3/llvm/IR/Module.h"
+#include "llvm-3.3/llvm/IR/DerivedTypes.h"
+#include "Scope.h"
+
 #ifndef YYTOKENTYPE
 #include "decaf-ast.tab.h"
 #endif
 
 using namespace std;
+using namespace llvm;
+
+static Module* TheModule;
+static IRBuilder<> Builder(getGlobalContext());
+
+Value* ErrorV(const char* str)
+{
+	fprintf(stderr, "Error: %s\n", str);
+	return NULL;
+}
 
 typedef enum { voidTy, intTy, boolTy, stringTy, } decafType;
+
+Type* getLLVMType(decafType type)
+{
+	switch(type)
+	{
+		case voidTy:
+			return Builder.getVoidTy();
+		case intTy:
+			return Builder.getInt32Ty();
+		case boolTy:
+			return Builder.getInt1Ty();
+		case stringTy:
+			return Builder.getInt8PtrTy();
+		default:
+			assert(false); //unknown type
+	}
+}
 
 string TyString(decafType x) {
 	switch (x) {
@@ -63,6 +96,7 @@ class decafAST {
 public:
   virtual ~decafAST() {}
   virtual string str() { return string(""); }
+  virtual Value* codegen() { printf("CODEGEN general node");}
 };
 
 string getString(decafAST *d) {
@@ -194,6 +228,7 @@ public:
 	int size() { return stmts.size(); }
 	void push_front(decafAST *e) { stmts.push_front(e); }
 	void push_back(decafAST *e) { stmts.push_back(e); }
+	list<decafAST*>& getList() { return stmts; }
 	string str() { return commaList<class decafAST *>(stmts); }
 };
 
@@ -203,6 +238,7 @@ class NumberExprAST : public decafAST {
 public:
 	NumberExprAST(int val) : Val(val) {}
 	string str() { return buildString1("Number", convertInt(Val)); }
+	Value* codegen() { return ConstantFP::get(getGlobalContext(), APFloat((float)Val)); }
 };
 
 /// StringConstAST - string constant
@@ -211,6 +247,11 @@ class StringConstAST : public decafAST {
 public:
 	StringConstAST(string s) : StringConst(s) {}
 	string str() { return buildString1("StringConstant", "\"" + StringConst + "\""); }
+	Value* codegen()
+	{
+		Value* gs = Builder.CreateGlobalString(StringConst.c_str(), "GlobalString");
+		return Builder.CreateConstGEP2_32(gs, 0, 0, "cast");
+	}
 };
 
 /// BoolExprAST - Expression class for boolean literals: "true" and "false".
@@ -219,6 +260,7 @@ class BoolExprAST : public decafAST {
 public:
 	BoolExprAST(bool val) : Val(val) {}
 	string str() { return buildString1("BoolExpr", Val ? string("True") : string("False")); }
+	Value* codegen() { return Builder.getInt1(Val); } 
 };
 
 /// VariableExprAST - Expression class for variables like "a".
@@ -227,7 +269,13 @@ class VariableExprAST : public decafAST {
 public:
 	VariableExprAST(string name) : Name(name) {}
 	string str() { return buildString1("VariableExpr", Name); }
-	//const std::string &getName() const { return Name; }
+	Value* codegen() { 
+		/*Value* val = NamedValues[Name];
+		if(!val)
+			return ErrorV("Unknown variable name.");
+		return val;*/
+		return NULL;
+	}
 };
 
 /// MethodCallAST - call a function with some arguments
@@ -238,6 +286,26 @@ public:
 	MethodCallAST(string name, decafStmtList *args) : Name(name), Args(args) {}
 	~MethodCallAST() { delete Args; }
 	string str() { return buildString2("MethodCall", Name, Args); }
+	Value* codegen() { 
+		Function* existingFunc = TheModule->getFunction(Name);
+		if(!existingFunc)
+		{
+			return ErrorV("Function is undeclared");
+		}
+		if(existingFunc->arg_size() != Args->size())
+		{
+			return ErrorV("Error: does not contain the required arguments.");
+		}
+
+		vector<Value*> params;
+		for (list<decafAST*>::iterator i = Args->getList().begin(); i != Args->getList().end(); i++) { 
+			params.push_back((*i)->codegen());
+			if(!params.back())
+				return NULL;
+		}
+
+		return Builder.CreateCall(existingFunc, params, "methodcall");
+	}
 };
 
 /// BinaryExprAST - Expression class for a binary operator.
@@ -248,6 +316,60 @@ public:
 	BinaryExprAST(int op, decafAST *lhs, decafAST *rhs) : Op(op), LHS(lhs), RHS(rhs) {}
 	~BinaryExprAST() { delete LHS; delete RHS; }
 	string str() { return buildString3("BinaryExpr", BinaryOpString(Op), LHS, RHS); }
+
+	Value* codegen()
+	{
+		Value* L = LHS->codegen();
+		Value* R = RHS->codegen();
+		if(!L || !R)
+			return NULL;
+
+		switch (Op) {
+			  case T_PLUS: return Builder.CreateFAdd(L, R, "addtmp");
+			  case T_MINUS: return Builder.CreateFSub(L, R, "subtmp");
+			  case T_MULT: return Builder.CreateFMul(L, R, "multmp");
+			  case T_DIV: return Builder.CreateFDiv(L, R, "divtmp");
+			  case T_MOD: return Builder.CreateFRem(L,R,"modtmp");
+
+			  case T_LEFTSHIFT:  return Builder.CreateShl(L,R,"<<");
+			  case T_RIGHTSHIFT:  return Builder.CreateLShr(L,R,">>");
+
+			  case T_LT:
+			    L = Builder.CreateFCmpULT(L, R, "cmptmp");
+			    // Convert bool 0/1 to double 0.0 or 1.0
+			    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),"booltmp");
+			  case T_LEQ:
+			    L=Builder.CreateFCmpULE(L,R,"cmptmp");
+			     // Convert bool 0/1 to double 0.0 or 1.0
+			    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),"booltmp");
+			  case T_GT:
+			    L = Builder.CreateFCmpUGT(L, R, "cmptmp");
+			    // Convert bool 0/1 to double 0.0 or 1.0
+			    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),"booltmp");
+			  case T_GEQ:
+			    L=Builder.CreateFCmpUGE(L,R,"cmptmp");
+			     // Convert bool 0/1 to double 0.0 or 1.0
+			    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),"booltmp");
+			  case T_EQ:
+			    L = Builder.CreateFCmpUEQ(L, R, "cmptmp");
+			    // Convert bool 0/1 to double 0.0 or 1.0
+			    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),"booltmp");
+			  case T_NEQ:
+			      L = Builder.CreateFCmpUNE(L, R, "cmptmp");
+			    // Convert bool 0/1 to double 0.0 or 1.0
+			    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),"booltmp");
+			  case T_AND:
+			     return Builder.CreateAnd(L,R,"andtmp");
+			     // Convert bool 0/1 to double 0.0 or 1.0
+			    //return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),"booltmp");
+
+			  case T_OR:
+			      return Builder.CreateOr(L,R,"ortmp");
+			     // Convert bool 0/1 to double 0.0 or 1.0
+			    //return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),"booltmp");
+			  default: return ErrorV("invalid binary operator");
+		}
+	}
 };
 
 /// UnaryExprAST - Expression class for a unary operator.
@@ -258,6 +380,22 @@ public:
 	UnaryExprAST(int op, decafAST *expr) : Op(op), Expr(expr) {}
 	~UnaryExprAST() { delete Expr; }
 	string str() { return buildString2("UnaryExpr", UnaryOpString(Op), Expr); }
+
+	Value* codegen()
+	{
+		Value* expr = Expr->codegen();
+		if(!expr)
+			return NULL;
+
+		switch(Op)
+		{
+			case T_MINUS:
+				return Builder.CreateFNeg(expr, "unaryneg");
+			case T_NOT:
+				return Builder.CreateNot(expr, "unaryneg");
+			default: return ErrorV("invalid unary operator");
+		}
+	}
 };
 
 /// AssignVarAST - assign value to a variable
@@ -270,6 +408,11 @@ public:
 		if (Value != NULL) { delete Value; }
 	}
 	string str() { return buildString2("AssignVar", Name, Value); }
+
+	llvm::Value* codegen()
+	{
+		return NULL;
+	}
 };
 
 /// AssignArrayLocAST - assign value to a variable
