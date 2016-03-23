@@ -5,11 +5,16 @@
 #include <cstdlib>
 #include "decafast-defs.h"
 #include "Scope.h"
+#include "llvm-3.3/llvm/ADT/STLExtras.h"
+#include "llvm-3.3/llvm/ExecutionEngine/GenericValue.h"
+#include "llvm-3.3/llvm/ExecutionEngine/ExecutionEngine.h"
+//#include "llvm-3.3/llvm/ExecutionEngine/JIT.h"
 
 int yylex(void);
 int yyerror(char *); 
 
 using namespace std;
+using namespace llvm;
 
 // print AST?
 bool printAST = false;
@@ -58,6 +63,44 @@ program: extern_list decafclass
 		if (printAST) {
 			cout << getString(prog) << endl;
 		}
+
+		Constant* c = TheModule->getOrInsertFunction("mul_add",
+		/*ret type*/                           	Builder.getInt32Ty(),
+		/*args*/                               	Builder.getInt32Ty(),
+		                                       	Builder.getInt32Ty(),
+		                                       	Builder.getInt32Ty(),
+		/*varargs terminated with null*/     	NULL);
+		  
+		Function* mul_add = cast<Function>(c);
+		mul_add->setCallingConv(CallingConv::C);
+
+		Function::arg_iterator args = mul_add->arg_begin();
+  		Value* x = args++;
+  		x->setName("x");
+  		Value* y = args++;
+  		y->setName("y");
+  		Value* z = args++;
+  		z->setName("z");
+
+  		BasicBlock* block = BasicBlock::Create(getGlobalContext(), "entry", mul_add);
+  		Builder.SetInsertPoint(block);
+
+  		Value* tmp = Builder.CreateBinOp(Instruction::Mul, x, y, "tmp");
+  		Value* tmp2 = Builder.CreateBinOp(Instruction::Add, tmp, z, "tmp2");
+
+  		Builder.CreateRet(tmp2);
+
+
+
+		verifyModule(*TheModule, PrintMessageAction);
+		PassManager PM;
+  		PM.add(createPrintModulePass(&outs()));
+  		PM.run(*TheModule);
+
+  		LLVMExecutionEngineRef engine;
+  		//LLVMLinkInJIT();
+
+  		delete TheModule;
 
         delete prog;
     }

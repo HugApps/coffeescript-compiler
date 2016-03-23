@@ -9,6 +9,13 @@
 #include "llvm-3.3/llvm/IR/LLVMContext.h"
 #include "llvm-3.3/llvm/IR/Module.h"
 #include "llvm-3.3/llvm/IR/DerivedTypes.h"
+#include "llvm-3.3/llvm/IR/Function.h"
+#include "llvm-3.3/llvm/IR/CallingConv.h"
+#include "llvm-3.3/llvm/Analysis/Verifier.h"
+#include "llvm-3.3/llvm/Assembly/PrintModulePass.h"
+#include "llvm-3.3/llvm/Support/raw_ostream.h"
+#include "llvm-3.3/llvm/PassManager.h"
+
 #include "Scope.h"
 
 #ifndef YYTOKENTYPE
@@ -18,7 +25,7 @@
 using namespace std;
 using namespace llvm;
 
-static Module* TheModule;
+static Module* TheModule = new Module("testModule", getGlobalContext());
 static IRBuilder<> Builder(getGlobalContext());
 
 Value* ErrorV(const char* str)
