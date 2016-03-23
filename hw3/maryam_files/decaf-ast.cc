@@ -25,7 +25,7 @@
 using namespace std;
 using namespace llvm;
 
-static Module* TheModule = new Module("testModule", getGlobalContext());
+static Module* TheModule = new Module("Test", getGlobalContext());
 static IRBuilder<> Builder(getGlobalContext());
 
 Value* ErrorV(const char* str)
@@ -187,6 +187,16 @@ public:
 		}
 	}
 
+	decafType getType()
+	{
+		return Ty;
+	}
+
+	string getSymbol()
+	{
+		return Sym;
+	}
+
 	Value* codegen()
 	{
 		AllocaInst* Alloca = Builder.CreateAlloca(getLLVMType(Ty), 0, Sym.c_str());
@@ -313,19 +323,21 @@ public:
 		{
 			return ErrorV("Function is undeclared");
 		}
-		if(existingFunc->arg_size() != Args->size())
-		{
-			return ErrorV("Error: does not contain the required arguments.");
-		}
 
 		vector<Value*> params;
-		for (list<decafAST*>::iterator i = Args->getList().begin(); i != Args->getList().end(); i++) { 
-			params.push_back((*i)->codegen());
-			if(!params.back())
-				return NULL;
+		if(Args)
+		{
+			if(existingFunc->arg_size() != Args->size())
+			{
+				return ErrorV("Error: does not contain the required arguments.");
+			}
+
+			for (list<decafAST*>::iterator i = Args->getList().begin(); i != Args->getList().end(); i++) { 
+				//params.push_back((*i)->codegen());
+			}
 		}
 
-		return Builder.CreateCall(existingFunc, params, "methodcall");
+		return Builder.CreateCall(existingFunc, params);
 	}
 };
 
@@ -475,9 +487,29 @@ public:
 
 	Value* codegen()
 	{
+		SCOPE::enterNewScope();
+
 		BasicBlock* BB = BasicBlock::Create(getGlobalContext(), "block", Builder.GetInsertBlock()->getParent());
 		Builder.SetInsertPoint(BB);
+
+		SCOPE::leaveScope();
 		return BB;
+	}
+};
+
+/// ReturnStmtAST - return statement
+class ReturnStmtAST : public decafAST {
+	decafAST *Value;
+public:
+	ReturnStmtAST(decafAST *value) : Value(value) {}
+	~ReturnStmtAST() { 
+		if (Value != NULL) { delete Value; }
+	}
+	string str() { return buildString1("ReturnStmt", Value); }
+
+	llvm::Value* codegen()
+	{
+		return NULL;
 	}
 };
 
@@ -492,6 +524,28 @@ public:
 		if (Statements != NULL) { delete Statements; }
 	}
 	string str() { return buildString2("MethodBlock", Vars, Statements); }
+
+	Value* codegen()
+	{
+		SCOPE::enterNewScope();
+		for (list<decafAST*>::iterator i = Vars->getList().begin(); i != Vars->getList().end(); i++) { 
+			(*i)->codegen();
+		}
+		Value* rtn = NULL;
+		for (list<decafAST*>::iterator i = Statements->getList().begin(); i != Statements->getList().end(); i++) { 
+			ReturnStmtAST* returnStatement = dynamic_cast<ReturnStmtAST*>(*i);
+			if(returnStatement)
+			{
+				rtn = (*i)->codegen();
+			}
+			else
+			{
+				(*i)->codegen();
+			}
+		}
+		SCOPE::leaveScope();
+		return rtn;
+	}
 };
 
 /// IfStmtAST - if statement
@@ -537,17 +591,6 @@ public:
 	string str() { return buildString4("ForStmt", InitList, Cond, LoopEndList, Body); }
 };
 
-/// ReturnStmtAST - return statement
-class ReturnStmtAST : public decafAST {
-	decafAST *Value;
-public:
-	ReturnStmtAST(decafAST *value) : Value(value) {}
-	~ReturnStmtAST() { 
-		if (Value != NULL) { delete Value; }
-	}
-	string str() { return buildString1("ReturnStmt", Value); }
-};
-
 /// BreakStmtAST - break statement
 class BreakStmtAST : public decafAST {
 public:
@@ -568,6 +611,7 @@ class MethodDeclAST : public decafAST {
 	string Name;
 	TypedSymbolListAST *FunctionArgs;
 	MethodBlockAST *Block;
+	Function* func;
 public:
 	MethodDeclAST(decafType rtype, string name, TypedSymbolListAST *fargs, MethodBlockAST *block) 
 		: ReturnType(rtype), Name(name), FunctionArgs(fargs), Block(block) {}
@@ -577,15 +621,53 @@ public:
 	}
 	string str() { return buildString4("Method", Name, TyString(ReturnType), FunctionArgs, Block); }
 
-	Value* codegen()
+	void codegenPrototype()
 	{
-		/*std::vector<Type*> varTypes;
-		for (list<decafAST*>::iterator i = FunctionArgs->getList().begin(); i != FunctionArgs->getList().end(); i++) { 
-			varTypes.push_back((*i)->codegen());
-			if(!params.back())
-				return NULL;
-		}*/
-			
+		printf("creating method prototype\n");
+		std::vector<Type*> paramTypes;
+		if(FunctionArgs)
+		{
+			for (list<TypedSymbol*>::iterator i = FunctionArgs->getList().begin(); i != FunctionArgs->getList().end(); i++) { 
+				paramTypes.push_back(getLLVMType((*i)->getType()));
+			}
+		}		
+
+		Constant* c = TheModule->getOrInsertFunction(Name, llvm::FunctionType::get(getLLVMType(ReturnType), paramTypes, false));		  
+		func = (Function*)c;
+		func->setCallingConv(CallingConv::C);
+	}
+
+	void codegenBlock()
+	{
+		printf("creating method block\n");
+		SCOPE::enterNewScope();
+
+		if(FunctionArgs)
+		{
+			Function::arg_iterator args = func->arg_begin();
+			for (list<TypedSymbol*>::iterator i = FunctionArgs->getList().begin(); i != FunctionArgs->getList().end(); i++) 
+			{ 
+				Value* value = args++;
+				string symbol = (*i)->getSymbol();
+				value->setName(symbol);
+				SCOPE::addDefinition(symbol, Symbol(value));
+			}
+		}
+
+		BasicBlock* block = BasicBlock::Create(getGlobalContext(), "entry", func);
+  		Builder.SetInsertPoint(block);
+		
+		Value* returnValue = Block->codegen();
+		if(Name.compare("main") == 0)
+		{
+			Builder.CreateRet(ConstantInt::get(getGlobalContext(), APInt(32, 0)));
+		}
+  		else
+  		{
+  			Builder.CreateRet(returnValue);
+  		}
+  		
+  		SCOPE::leaveScope();
 	}
 };
 
@@ -650,6 +732,11 @@ public:
 		arglist.push_back(s);
 	}
 	string str() { return commaList<class decafAST *>(arglist); }
+
+	Value* codegen()
+	{
+		return NULL;
+	}
 };
 
 class ClassAST : public decafAST {
@@ -664,6 +751,23 @@ public:
 		if (MethodDeclList != NULL) { delete MethodDeclList; }
 	}
 	string str() { return buildString3("Class", Name, FieldDeclList, MethodDeclList); }
+
+	Value* codegen()
+	{
+		SCOPE::enterNewScope();
+		FieldDeclList->codegen();
+
+		printf("\nDeclaring methods\n");
+		for (list<decafAST*>::iterator i = MethodDeclList->getList().begin(); i != MethodDeclList->getList().end(); i++) { 
+			((MethodDeclAST*)(*i))->codegenPrototype();
+		}
+		for (list<decafAST*>::iterator i = MethodDeclList->getList().begin(); i != MethodDeclList->getList().end(); i++) { 
+			((MethodDeclAST*)(*i))->codegenBlock();
+		}
+
+		SCOPE::leaveScope();
+		return NULL;
+	}
 };
 
 /// ExternAST - extern function definition
@@ -677,6 +781,23 @@ public:
 		if (FunctionArgs != NULL) { delete FunctionArgs; }
 	}
 	string str() { return buildString3("ExternFunction", Name, TyString(ReturnType), FunctionArgs); }
+
+	Value* codegen()
+	{
+		vector<Type*> argTypes;
+		for (list<TypedSymbol*>::iterator i = FunctionArgs->getList().begin(); i != FunctionArgs->getList().end(); i++) { 
+			argTypes.push_back(getLLVMType((*i)->getType()));
+		}
+		
+		Function* func = llvm::Function::Create(
+			llvm::FunctionType::get(getLLVMType(ReturnType), argTypes, false),
+			llvm::Function::ExternalLinkage,
+			Name,
+			TheModule);
+
+		func->setCallingConv(CallingConv::C);
+		return NULL;
+	}
 };
 
 /// ProgramAST - the decaf program
@@ -690,5 +811,16 @@ public:
 		if (ClassDef != NULL) { delete ClassDef; }
 	}
 	string str() { return buildString2("Program", ExternList, ClassDef); }
+
+	Value* codegen()
+	{
+		for (list<decafAST*>::iterator i = ExternList->getList().begin(); i != ExternList->getList().end(); i++) { 
+			(*i)->codegen();
+		}
+
+		ClassDef->codegen();
+
+		return NULL;
+	}
 };
 

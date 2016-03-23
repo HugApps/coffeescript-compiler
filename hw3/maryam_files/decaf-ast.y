@@ -64,6 +64,9 @@ program: extern_list decafclass
 			cout << getString(prog) << endl;
 		}
 
+		prog->codegen();
+
+		
 		Constant* c = TheModule->getOrInsertFunction("mul_add",
 		/*ret type*/                           	Builder.getInt32Ty(),
 		/*args*/                               	Builder.getInt32Ty(),
@@ -71,6 +74,7 @@ program: extern_list decafclass
 		                                       	Builder.getInt32Ty(),
 		/*varargs terminated with null*/     	NULL);
 		  
+
 		Function* mul_add = cast<Function>(c);
 		mul_add->setCallingConv(CallingConv::C);
 
@@ -89,7 +93,7 @@ program: extern_list decafclass
   		Value* tmp2 = Builder.CreateBinOp(Instruction::Add, tmp, z, "tmp2");
 
   		Builder.CreateRet(tmp2);
-
+  		
 
 
 		verifyModule(*TheModule, PrintMessageAction);
@@ -132,9 +136,9 @@ extern_type: T_STRINGTYPE
     | type
     { $$ = $1; }
     ;
-begin_block: T_LCB { SCOPE::enterNewScope(); }
+begin_block: T_LCB {  }
 
-end_block:   T_RCB { SCOPE::leaveScope(); }
+end_block:   T_RCB {  }
 
 decafclass: T_CLASS T_ID begin_block field_decl_list method_decl_list end_block
     { $$ = new ClassAST(*$2, (FieldDeclListAST *)$4, (decafStmtList *)$5); delete $2; }
