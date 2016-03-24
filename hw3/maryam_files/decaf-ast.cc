@@ -53,6 +53,17 @@ Type* getLLVMType(decafType type)
 	}
 }
 
+Value* promoteIfNeeded(Value* source, Value* target)
+{
+	if(source->getType() == target->getType())
+		return source;
+
+	if(source->getType() == Builder.getInt1Ty() && target->getType() == Builder.getInt32Ty())
+	{
+		return Builder.CreateZExt(source, Builder.getInt32Ty());
+	}
+}
+
 string TyString(decafType x) {
 	switch (x) {
 		case voidTy: return string("VoidType");
@@ -328,8 +339,12 @@ public:
 				return ErrorV("Error: does not contain the required arguments.");
 			}
 
+			Function::arg_iterator args = existingFunc->arg_begin();
 			for (list<decafAST*>::iterator i = Args->getList().begin(); i != Args->getList().end(); i++) { 
-				params.push_back((*i)->codegen());
+				Value* target = args++;
+				Value* src = (*i)->codegen();
+
+				params.push_back(promoteIfNeeded(src, target));
 			}
 		}
 		return Builder.CreateCall(existingFunc, params);
