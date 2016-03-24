@@ -300,10 +300,7 @@ public:
 			return ErrorV("Unknown variable name.");
 		}
 		Value* val = SCOPE::getDefinition(Name).getValue();
-		if(!val)
-		{
-			printf("NULL value in symbol table\n");
-		}	
+	
 		Value* rtnVal = Builder.CreateLoad(val, Name.c_str());
 		printf("Variable Expression Get Value\n");
 		return rtnVal;
@@ -369,38 +366,21 @@ public:
 			  case T_RIGHTSHIFT:  return Builder.CreateLShr(L,R,">>");
 
 			  case T_LT:
-			    L = Builder.CreateFCmpULT(L, R, "cmptmp");
-			    // Convert bool 0/1 to double 0.0 or 1.0
-			    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),"booltmp");
+			    return  Builder.CreateICmpULT(L, R, "cmptmp");
 			  case T_LEQ:
-			    L=Builder.CreateFCmpULE(L,R,"cmptmp");
-			     // Convert bool 0/1 to double 0.0 or 1.0
-			    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),"booltmp");
+			    return Builder.CreateICmpULE(L,R,"cmptmp");
 			  case T_GT:
-			    L = Builder.CreateFCmpUGT(L, R, "cmptmp");
-			    // Convert bool 0/1 to double 0.0 or 1.0
-			    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),"booltmp");
+			    return  Builder.CreateICmpSGT(L, R, "cmptmp");
 			  case T_GEQ:
-			    L=Builder.CreateFCmpUGE(L,R,"cmptmp");
-			     // Convert bool 0/1 to double 0.0 or 1.0
-			    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),"booltmp");
+			    return Builder.CreateICmpSGE(L,R,"cmptmp");
 			  case T_EQ:
-			    L = Builder.CreateFCmpUEQ(L, R, "cmptmp");
-			    // Convert bool 0/1 to double 0.0 or 1.0
-			    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),"booltmp");
+			  	return Builder.CreateICmpEQ(L, R);
 			  case T_NEQ:
-			      L = Builder.CreateFCmpUNE(L, R, "cmptmp");
-			    // Convert bool 0/1 to double 0.0 or 1.0
-			    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),"booltmp");
+			      return Builder.CreateICmpNE(L, R, "cmptmp");
 			  case T_AND:
 			     return Builder.CreateAnd(L,R,"andtmp");
-			     // Convert bool 0/1 to double 0.0 or 1.0
-			    //return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),"booltmp");
-
 			  case T_OR:
-			      return Builder.CreateOr(L,R,"ortmp");
-			     // Convert bool 0/1 to double 0.0 or 1.0
-			    //return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),"booltmp");
+			     return Builder.CreateOr(L,R,"ortmp");
 			  default: return ErrorV("invalid binary operator");
 		}
 	}
@@ -445,6 +425,13 @@ public:
 
 	llvm::Value* codegen()
 	{
+		if(!SCOPE::containsDefinition(Name))
+		{
+			return ErrorV("Unknown variable name.");
+		}
+		llvm::Value* val = SCOPE::getDefinition(Name).getValue();
+		llvm::Value* exprVal = Value->codegen();
+		Builder.CreateStore( exprVal, val);
 		return NULL;
 	}
 };
