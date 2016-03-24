@@ -1,0 +1,88 @@
+#ifndef SYMBOL_TABLE_H_
+#define SYMBOL_TABLE_H_
+
+#include <unordered_map>
+#include <string>
+#include <vector>
+#include <assert.h>
+#include "sem.cc"
+
+using namespace std;
+
+class Symbol
+{
+public:
+	Symbol(string type, string value, int lineNumber) :
+		_value(value),
+		_type(type),
+		_lineNumber(lineNumber)
+	{
+	}
+
+	Symbol(string value) :
+		_value(value),
+		_lineNumber(-1)
+	{
+	}
+
+	~Symbol()
+	{
+	}
+
+	string getValue()
+	{
+		return _value;
+	}
+
+	string getType()
+	{
+		return _type;
+	}
+
+	int getLineNumber()
+	{
+		return _lineNumber;
+	}
+
+private:
+	string _value;
+	string _type;
+	int _lineNumber;
+};
+
+class SymbolTable
+{
+public:
+	SymbolTable()
+	{
+	}
+
+	~SymbolTable()
+	{
+	}
+
+	void addDefinition(string key, Symbol value)
+	{
+		_symbols.insert(pair<string, Symbol>(key, value));
+	}
+
+	Symbol& getDefinition(string key)
+	{
+		return _symbols.at(key);
+	}
+
+	bool containsDefinition(string key)
+	{
+		std::unordered_map<string, Symbol>::iterator it = _symbols.find(key);
+		if (it == _symbols.end())
+			return false;
+		else
+			return true;
+	}
+
+private:
+	std::unordered_map<string, Symbol> _symbols;
+	//need to deal with associating value and type and finding it on both accounts
+};
+
+#endif

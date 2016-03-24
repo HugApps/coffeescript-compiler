@@ -163,6 +163,7 @@ class Node
         virtual Value* codegen()
         {
 
+            return llvm::BasicBlock::Create(getGlobalContext(),"GeneralBlock",1,0);
         }
 
 		void addChild(Node* child)
@@ -210,6 +211,7 @@ class ProgramNode : public Node
 			}
 			return nodeStr;
 		}
+
 };
 
 class ExternNode : public Node
@@ -443,8 +445,16 @@ public:
 	}
 
 	Value* codegen() {
-		//return constantFP::get(getGlobalContext(),APfloat(ConstanNode::value));
-		return NULL;
+
+
+	//contents taken from LLVM cheat sheet
+    const char *s = value.c_str();
+    llvm::Value *GS =Builder.CreateGlobalString(s, "globalstring");
+    return Builder.CreateConstGEP2_32(GS, 0, 0, "cast");
+
+
+
+
 	}
 };
 
@@ -838,14 +848,13 @@ class UnaryExprNode : public Node
 //llvm::Value *ErrorV(const char *Str) { Error(Str); return 0; }
 
 //Codegen implementation for All the ASTs
-
 /*
+
 
 Value *ExternAST::codegen(){
 llvm::Type externtype = *getLLVMType(ReturnType);
 
-*/
-/*
+
 
 //Binary Operations:
 llvm:: Value *BinaryExprAST::codegen() {
@@ -1076,7 +1085,7 @@ llvm::Value *AssignVarAST::codegen(){
 
 
 }
-/*
+
 Check if variable is declared in current scope table.
 
     if( Hash table has variable already declared){
@@ -1112,7 +1121,7 @@ static llvm::Constant *CharConstAST::Codegen() {
 		    Builder.CreateGlobalString(c, "globalcharacter");
   return Builder.CreateConstGEP2_32(GS, 0, 0, "cast");//not sure what this is doing, or if the vars need to be changed
 }
-
+*/
 /*Might not need this since numberexprast is doing the same. Keeping this for reference.
 static llvm::ConstantInt *IntConstAST::Codegen() {
   return Builder.getInt32(intValue);//needs to get passsed in the local value found in IntConstAST...
@@ -1124,10 +1133,11 @@ static llvm::Constant *BoolExprAST::codgen(){
 	return Builder.getInt1(Val);
 	//IRBuilder::getInt1 returns a ConstantInt, but we can use Constant as per her LLVM cheatsheet
 }
-
-
-
 */
+
+
+
+
 
 
 }

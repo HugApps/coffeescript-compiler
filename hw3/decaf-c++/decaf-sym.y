@@ -12,6 +12,7 @@ int yyerror(char *);
 
 using namespace std;
 using namespace AST;
+using namespace llvm;
 
 // Head Scope
 
@@ -33,7 +34,7 @@ Node* root = NULL;
 %token T_VOID T_WHILE T_WHITESPACE
 %token T_INTTYPE T_BOOLTYPE
 
-%token <sval> T_ID T_STRINGCONSTANT T_CHARCONSTANT T_INTCONSTANT T_FALSE T_TRUE 
+%token <sval> T_ID T_STRINGCONSTANT T_CHARCONSTANT T_INTCONSTANT T_FALSE T_TRUE
 %type <node> type method_type extern_type
 %type <node> rvalue expr constant bool_constant method_call method_arg method_arg_list assign assign_comma_list
 %type <node> block method_block statement statement_list var_decl_list var_decl var_list param_list param_comma_list
@@ -55,11 +56,17 @@ start: program
 program: extern_list decafclass
     {
     	root = new ProgramNode();
-        root->addChild($1);   	
+        root->addChild($1);
         root->addChild($2);
 
         root->generateSymbols();
 		printf("%s\n", root->toString().c_str());
+
+		TheModule = new Module("test",getGlobalContext());
+       // MainLoop();
+        TheModule->dump();
+
+
     }
     ;
 
@@ -102,16 +109,16 @@ field_decl_list: field_decl_list field_decl
 field_decl: field_list T_SEMICOLON
     { $$ = new DeclarationNode(lineno); $$->addChild($1); }
     | type T_ID T_ASSIGN constant T_SEMICOLON
-    { $$ = new DeclarationNode(lineno); Node* node = new FieldDeclNode(lineno); node->addChild($1); 
-    	node->addChild(new IdNode($2)); node->addChild($4); $$->addChild(node); 
+    { $$ = new DeclarationNode(lineno); Node* node = new FieldDeclNode(lineno); node->addChild($1);
+    	node->addChild(new IdNode($2)); node->addChild($4); $$->addChild(node);
     }
     ;
 
 field_list: field_list T_COMMA T_ID
     { $$ = new Node(LIST); $$->addChild($1); Node* node = new FieldDeclNode(lineno); node->addChild(new IdNode($3)); $$->addChild(node); }
     | field_list T_COMMA T_ID T_LSB T_INTCONSTANT T_RSB
-    { 
-    	$$ = new Node(LIST); $$->addChild($1); 
+    {
+    	$$ = new Node(LIST); $$->addChild($1);
     	Node* node = new FieldArrayDeclNode(lineno); $$->addChild(new IdNode($3)); $$->addChild(new ConstantNode($5));
     	$$->addChild(node);
     }
@@ -309,8 +316,9 @@ bool_constant: T_TRUE
 int main() {
   // Intialize LLVM module
   //LLVMContext &Context = getGlobalContext();
-  //TheModule = new Module("?",Context);
+
   // parse the input and create the abstract syntax tree
   int retval = yyparse();
+  printf("END==========");
   return(retval >= 1 ? 1 : 0);
 }
