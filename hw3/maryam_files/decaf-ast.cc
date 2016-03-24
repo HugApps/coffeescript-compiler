@@ -19,7 +19,7 @@
 #include "Scope.h"
 
 #ifndef YYTOKENTYPE
-#include "decaf-ast.tab.h"
+#include "expr-codegen.tab.h"
 #endif
 
 using namespace std;
@@ -103,7 +103,7 @@ class decafAST {
 public:
   virtual ~decafAST() {}
   virtual string str() { return string(""); }
-  virtual Value* codegen() { printf("CODEGEN general node");}
+  virtual Value* codegen() { /*printf("CODEGEN general node");*/}
 };
 
 string getString(decafAST *d) {
@@ -294,7 +294,6 @@ public:
 	VariableExprAST(string name) : Name(name) {}
 	string str() { return buildString1("VariableExpr", Name); }
 	Value* codegen() { 
-		printf("Variable Expression\n");
 		if(!SCOPE::containsDefinition(Name))
 		{
 			return ErrorV("Unknown variable name.");
@@ -302,7 +301,6 @@ public:
 		Value* val = SCOPE::getDefinition(Name).getValue();
 	
 		Value* rtnVal = Builder.CreateLoad(val, Name.c_str());
-		printf("Variable Expression Get Value\n");
 		return rtnVal;
 	}
 };
@@ -334,7 +332,6 @@ public:
 				params.push_back((*i)->codegen());
 			}
 		}
-		printf("Before method call\n");
 		return Builder.CreateCall(existingFunc, params);
 	}
 };
@@ -621,7 +618,6 @@ public:
 
 	void codegenPrototype()
 	{
-		printf("creating method prototype\n");
 		std::vector<Type*> paramTypes;
 		if(FunctionArgs)
 		{
@@ -637,7 +633,6 @@ public:
 
 	void codegenBlock()
 	{
-		printf("creating method block\n");
 		SCOPE::enterNewScope();
 
 		BasicBlock* block = BasicBlock::Create(getGlobalContext(), "entry", func);
@@ -758,7 +753,6 @@ public:
 		SCOPE::enterNewScope();
 		FieldDeclList->codegen();
 
-		printf("\nDeclaring methods\n");
 		for (list<decafAST*>::iterator i = MethodDeclList->getList().begin(); i != MethodDeclList->getList().end(); i++) { 
 			((MethodDeclAST*)(*i))->codegenPrototype();
 		}
