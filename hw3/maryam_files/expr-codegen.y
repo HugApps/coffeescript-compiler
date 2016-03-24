@@ -5,10 +5,6 @@
 #include <cstdlib>
 #include "decafast-defs.h"
 #include "Scope.h"
-#include "llvm-3.3/llvm/ADT/STLExtras.h"
-#include "llvm-3.3/llvm/ExecutionEngine/GenericValue.h"
-#include "llvm-3.3/llvm/ExecutionEngine/ExecutionEngine.h"
-//#include "llvm-3.3/llvm/ExecutionEngine/JIT.h"
 
 int yylex(void);
 int yyerror(char *); 
@@ -71,12 +67,10 @@ program: extern_list decafclass
   		
 
 		verifyModule(*TheModule, PrintMessageAction);
-		PassManager PM;
-  		PM.add(createPrintModulePass(&outs()));
-  		PM.run(*TheModule);
-
-  		LLVMExecutionEngineRef engine;
-  		//LLVMLinkInJIT();
+		//PassManager PM;
+  		//PM.add(createPrintModulePass(&outs()));
+  		//PM.run(*TheModule);
+        TheModule->dump();
 
   		delete TheModule;
 

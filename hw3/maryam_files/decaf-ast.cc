@@ -284,7 +284,7 @@ class BoolExprAST : public decafAST {
 public:
 	BoolExprAST(bool val) : Val(val) {}
 	string str() { return buildString1("BoolExpr", Val ? string("True") : string("False")); }
-	Value* codegen() { return Builder.getInt32(Val); } 
+	Value* codegen() { return Builder.getInt1(Val); } 
 };
 
 /// VariableExprAST - Expression class for variables like "a".
