@@ -371,8 +371,8 @@ public:
 			  case T_PLUS: return Builder.CreateAdd(L, R, "addtmp");
 			  case T_MINUS: return Builder.CreateSub(L, R, "subtmp");
 			  case T_MULT: return Builder.CreateMul(L, R, "multmp");
-			  case T_DIV: return Builder.CreateFDiv(L, R, "divtmp");
-			  case T_MOD: return Builder.CreateFRem(L,R,"modtmp");
+			  case T_DIV: return Builder.CreateSDiv(L, R, "divtmp");
+			  case T_MOD: return Builder.CreateSRem(L,R,"modtmp");
 
 			  case T_LEFTSHIFT:  return Builder.CreateShl(L,R,"<<");
 			  case T_RIGHTSHIFT:  return Builder.CreateLShr(L,R,">>");
@@ -416,9 +416,9 @@ public:
 		switch(Op)
 		{
 			case T_MINUS:
-				return Builder.CreateFNeg(expr, "unaryneg");
+				return Builder.CreateNeg(expr, "negtemp");
 			case T_NOT:
-				return Builder.CreateNot(expr, "unaryneg");
+				return Builder.CreateNot(expr, "nottemp");
 			default: return ErrorV("invalid unary operator");
 		}
 	}
@@ -489,11 +489,24 @@ public:
 	{
 		SCOPE::enterNewScope();
 
-		BasicBlock* BB = BasicBlock::Create(getGlobalContext(), "block", Builder.GetInsertBlock()->getParent());
-		Builder.SetInsertPoint(BB);
+		for (list<decafAST*>::iterator i = Vars->getList().begin(); i != Vars->getList().end(); i++) { 
+			TypedSymbolListAST* symbolList = (TypedSymbolListAST*)(*i);
+
+			for (list<TypedSymbol*>::iterator symbol = symbolList->getList().begin(); symbol != symbolList->getList().end(); symbol++) { 
+				Type* type = getLLVMType((*symbol)->getType());
+				string name = (*symbol)->getSymbol();
+
+				AllocaInst* Alloca = Builder.CreateAlloca(type, 0, name.c_str());
+				SCOPE::addDefinition(name, Symbol(Alloca));	
+			}
+		}
+
+		for (list<decafAST*>::iterator i = Statements->getList().begin(); i != Statements->getList().end(); i++) { 
+			(*i)->codegen();
+		}
 
 		SCOPE::leaveScope();
-		return BB;
+		return NULL;
 	}
 };
 
