@@ -268,7 +268,7 @@ class NumberExprAST : public decafAST {
 public:
 	NumberExprAST(int val) : Val(val) {}
 	string str() { return buildString1("Number", convertInt(Val)); }
-	Value* codegen() { return ConstantFP::get(getGlobalContext(), APFloat((float)Val)); }
+	Value* codegen() { return ConstantInt::get(getGlobalContext(), APInt(32,Val)); }
 };
 
 /// StringConstAST - string constant
@@ -300,12 +300,19 @@ public:
 	VariableExprAST(string name) : Name(name) {}
 	string str() { return buildString1("VariableExpr", Name); }
 	Value* codegen() { 
+		printf("Variable Expression\n");
 		if(!SCOPE::containsDefinition(Name))
 		{
 			return ErrorV("Unknown variable name.");
 		}
 		Value* val = SCOPE::getDefinition(Name).getValue();
-		return Builder.CreateLoad(val, Name.c_str());
+		if(!val)
+		{
+			printf("NULL value in symbol table\n");
+		}	
+		Value* rtnVal = Builder.CreateLoad(val, Name.c_str());
+		printf("Variable Expression Get Value\n");
+		return rtnVal;
 	}
 };
 
@@ -333,10 +340,10 @@ public:
 			}
 
 			for (list<decafAST*>::iterator i = Args->getList().begin(); i != Args->getList().end(); i++) { 
-				//params.push_back((*i)->codegen());
+				params.push_back((*i)->codegen());
 			}
 		}
-
+		printf("Before method call\n");
 		return Builder.CreateCall(existingFunc, params);
 	}
 };
@@ -358,9 +365,9 @@ public:
 			return NULL;
 
 		switch (Op) {
-			  case T_PLUS: return Builder.CreateFAdd(L, R, "addtmp");
-			  case T_MINUS: return Builder.CreateFSub(L, R, "subtmp");
-			  case T_MULT: return Builder.CreateFMul(L, R, "multmp");
+			  case T_PLUS: return Builder.CreateAdd(L, R, "addtmp");
+			  case T_MINUS: return Builder.CreateSub(L, R, "subtmp");
+			  case T_MULT: return Builder.CreateMul(L, R, "multmp");
 			  case T_DIV: return Builder.CreateFDiv(L, R, "divtmp");
 			  case T_MOD: return Builder.CreateFRem(L,R,"modtmp");
 
@@ -634,7 +641,7 @@ public:
 
 		Constant* c = TheModule->getOrInsertFunction(Name, llvm::FunctionType::get(getLLVMType(ReturnType), paramTypes, false));		  
 		func = (Function*)c;
-		func->setCallingConv(CallingConv::C);
+		func->setCallingConv(CallingConv::C);		
 	}
 
 	void codegenBlock()
@@ -642,20 +649,23 @@ public:
 		printf("creating method block\n");
 		SCOPE::enterNewScope();
 
+		BasicBlock* block = BasicBlock::Create(getGlobalContext(), "entry", func);
+  		Builder.SetInsertPoint(block);
+
 		if(FunctionArgs)
 		{
-			Function::arg_iterator args = func->arg_begin();
+	  		Function::arg_iterator args = func->arg_begin();
 			for (list<TypedSymbol*>::iterator i = FunctionArgs->getList().begin(); i != FunctionArgs->getList().end(); i++) 
 			{ 
 				Value* value = args++;
 				string symbol = (*i)->getSymbol();
 				value->setName(symbol);
-				SCOPE::addDefinition(symbol, Symbol(value));
+
+				AllocaInst* Alloca = Builder.CreateAlloca(getLLVMType((*i)->getType()), 0, symbol.c_str());
+				Builder.CreateStore(value, Alloca);
+				SCOPE::addDefinition(symbol, Symbol(Alloca));	
 			}
 		}
-
-		BasicBlock* block = BasicBlock::Create(getGlobalContext(), "entry", func);
-  		Builder.SetInsertPoint(block);
 		
 		Value* returnValue = Block->codegen();
 		if(Name.compare("main") == 0)
