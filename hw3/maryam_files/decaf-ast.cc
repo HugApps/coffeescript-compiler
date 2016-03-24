@@ -197,12 +197,6 @@ public:
 		return Sym;
 	}
 
-	Value* codegen()
-	{
-		AllocaInst* Alloca = Builder.CreateAlloca(getLLVMType(Ty), 0, Sym.c_str());
- 		SCOPE::addDefinition(Sym, Symbol(Alloca));
- 		return Alloca;
-	}
 	//virtual string getName();
 };
 
@@ -290,7 +284,7 @@ class BoolExprAST : public decafAST {
 public:
 	BoolExprAST(bool val) : Val(val) {}
 	string str() { return buildString1("BoolExpr", Val ? string("True") : string("False")); }
-	Value* codegen() { return Builder.getInt1(Val); } 
+	Value* codegen() { return Builder.getInt32(Val); } 
 };
 
 /// VariableExprAST - Expression class for variables like "a".
@@ -535,9 +529,19 @@ public:
 	Value* codegen()
 	{
 		SCOPE::enterNewScope();
+
 		for (list<decafAST*>::iterator i = Vars->getList().begin(); i != Vars->getList().end(); i++) { 
-			(*i)->codegen();
+			TypedSymbolListAST* symbolList = (TypedSymbolListAST*)(*i);
+
+			for (list<TypedSymbol*>::iterator symbol = symbolList->getList().begin(); symbol != symbolList->getList().end(); symbol++) { 
+				Type* type = getLLVMType((*symbol)->getType());
+				string name = (*symbol)->getSymbol();
+
+				AllocaInst* Alloca = Builder.CreateAlloca(type, 0, name.c_str());
+				SCOPE::addDefinition(name, Symbol(Alloca));	
+			}
 		}
+
 		Value* rtn = NULL;
 		for (list<decafAST*>::iterator i = Statements->getList().begin(); i != Statements->getList().end(); i++) { 
 			ReturnStmtAST* returnStatement = dynamic_cast<ReturnStmtAST*>(*i);
