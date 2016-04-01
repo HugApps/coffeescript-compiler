@@ -3,15 +3,15 @@
 template <class T>
 llvm::Value *listCodegen(list<T> vec) {
 	llvm::Value *val = NULL;
-	for (typename list<T>::iterator i = vec.begin(); i != vec.end(); i++) { 
+	for (typename list<T>::iterator i = vec.begin(); i != vec.end(); i++) {
 		llvm::Value *j = (*i)->Codegen();
 		if (j != NULL) { val = j; }
-	}	
+	}
 	return val;
 }
 
 void decafStmtList::listCodegenVec(std::vector<llvm::Value *> &val) {
-	for (list<decafAST *>::iterator i = stmts.begin(); i != stmts.end(); i++) { 
+	for (list<decafAST *>::iterator i = stmts.begin(); i != stmts.end(); i++) {
 		llvm::Value *argval = (*i)->Codegen();
 		if (NULL == argval) {
 			throw runtime_error("invalid argument in method call");
@@ -38,16 +38,16 @@ llvm::Constant *getZeroInit(decafType ty) {
 	}
 }
 
-llvm::Type *TypedSymbol::getType() { 
-	return getLLVMType(Ty); 
+llvm::Type *TypedSymbol::getType() {
+	return getLLVMType(Ty);
 }
 
-std::string TypedSymbol::getName() { 
-	return Sym; 
+std::string TypedSymbol::getName() {
+	return Sym;
 }
 
 void TypedSymbolListAST::typedArgList(std::vector<llvm::Type *> &args) {
-	for (list<class TypedSymbol *>::iterator i = arglist.begin(); i != arglist.end(); i++) { 
+	for (list<class TypedSymbol *>::iterator i = arglist.begin(); i != arglist.end(); i++) {
 		args.push_back((*i)->getType());
 	}
 }
@@ -57,7 +57,7 @@ void TypedSymbolListAST::setArgNames(llvm::Function *func) {
 		throw runtime_error("no function found");
 	}
 	llvm::Function::arg_iterator AI = func->arg_begin();
-	for (list<class TypedSymbol *>::iterator i = arglist.begin(); i != arglist.end() && AI != func->arg_end(); i++, AI++) { 
+	for (list<class TypedSymbol *>::iterator i = arglist.begin(); i != arglist.end() && AI != func->arg_end(); i++, AI++) {
 		if (NULL == AI) {
 			throw runtime_error("could not find arg in function arglist");
 		}
@@ -71,8 +71,8 @@ void TypedSymbolListAST::setArgNames(llvm::Function *func) {
 	}
 }
 
-llvm::Value *decafStmtList::Codegen() { 
-	return listCodegen<decafAST *>(stmts); 
+llvm::Value *decafStmtList::Codegen() {
+	return listCodegen<decafAST *>(stmts);
 }
 
 llvm::AllocaInst *defineVariable(llvm::Type *llvmTy, string ident) {
@@ -81,13 +81,13 @@ llvm::AllocaInst *defineVariable(llvm::Type *llvmTy, string ident) {
 	return Alloca;
 }
 
-llvm::Value *TypedSymbolListAST::Codegen() { 
+llvm::Value *TypedSymbolListAST::Codegen() {
 	llvm::Value *val = NULL;
-	for (list<class TypedSymbol *>::iterator i = arglist.begin(); i != arglist.end(); i++) { 
+	for (list<class TypedSymbol *>::iterator i = arglist.begin(); i != arglist.end(); i++) {
 		val = defineVariable((*i)->getType(), (*i)->getName());
 	}
 	return val;
-} 
+}
 
 llvm::Function *insertDeclare(decafType ReturnType, string Name, TypedSymbolListAST *FunctionArgs) {
 	llvm::Type *returnTy = getLLVMType(ReturnType);
@@ -96,13 +96,13 @@ llvm::Function *insertDeclare(decafType ReturnType, string Name, TypedSymbolList
 		FunctionArgs->typedArgList(args); // fill up the args vector with types
 	}
 	llvm::Function *func = llvm::Function::Create(
-		llvm::FunctionType::get(returnTy, args, false), 
-		llvm::Function::ExternalLinkage, 
-		Name, 
+		llvm::FunctionType::get(returnTy, args, false),
+		llvm::Function::ExternalLinkage,
+		Name,
 		TheModule
 	);
 	if (NULL == func) {
-		throw runtime_error("problem defining method " + Name); 
+		throw runtime_error("problem defining method " + Name);
 	}
 	syms.enter_symtbl(Name, func);
 	return func;
@@ -112,11 +112,11 @@ llvm::Function *MethodDeclAST::proto() {
 	return insertDeclare(ReturnType, Name, FunctionArgs);
 }
 
-llvm::Value *decafStmtList::insertDeclares() { 
+llvm::Value *decafStmtList::insertDeclares() {
 	llvm::Value *val = NULL;
 	string main("main");
 	bool hasMain = false;
-	for (list<decafAST *>::iterator i = stmts.begin(); i != stmts.end(); i++) { 
+	for (list<decafAST *>::iterator i = stmts.begin(); i != stmts.end(); i++) {
 		MethodDeclAST *m = (MethodDeclAST *)(*i);
 		val = m->proto();
         if (NULL == val) {
@@ -132,8 +132,8 @@ llvm::Value *decafStmtList::insertDeclares() {
 	return val;
 }
 
-llvm::Value *NumberExprAST::Codegen() { 
-	return Builder.getInt32(Val); 
+llvm::Value *NumberExprAST::Codegen() {
+	return Builder.getInt32(Val);
 }
 
 llvm::Value *StringConstAST::Codegen() {
@@ -142,17 +142,17 @@ llvm::Value *StringConstAST::Codegen() {
 	return Builder.CreateConstGEP2_32(GS, 0, 0, "cast");
 }
 
-llvm::Value *BoolExprAST::Codegen() { 
-	return Builder.getInt1(Val); 
+llvm::Value *BoolExprAST::Codegen() {
+	return Builder.getInt1(Val);
 }
 
-llvm::Value *VariableExprAST::Codegen() { 
+llvm::Value *VariableExprAST::Codegen() {
 	llvm::Value *V = syms.access_symtbl(Name);
 	if (V == NULL) throw runtime_error("could not find variable: " + Name);
 	return Builder.CreateLoad(V, Name.c_str());
 }
 
-llvm::Value *MethodCallAST::Codegen() { 
+llvm::Value *MethodCallAST::Codegen() {
 	std::vector<llvm::Value *> argvals;
 	if (Args != NULL) {
 		Args->listCodegenVec(argvals);
@@ -163,12 +163,12 @@ llvm::Value *MethodCallAST::Codegen() {
 	}
 	if (call->arg_size() != argvals.size()) {
 		throw runtime_error("incorrect number of arguments for " + Name);
-	}	
+	}
 
 	// check types and promote i1 to i32 if needed
 	std::vector<llvm::Value *> finalargs;
 	llvm::Function::arg_iterator AI = call->arg_begin();
-	for (std::vector<llvm::Value *>::iterator i = argvals.begin(); i != argvals.end() && AI != call->arg_end(); i++, AI++) { 
+	for (std::vector<llvm::Value *>::iterator i = argvals.begin(); i != argvals.end() && AI != call->arg_end(); i++, AI++) {
 		if (AI->getType() == (*i)->getType()) {
 			finalargs.push_back(*i);
 		}
@@ -183,8 +183,8 @@ llvm::Value *MethodCallAST::Codegen() {
 	}
 	bool isVoid = call->getReturnType()->isVoidTy();
 	llvm::Value *val = Builder.CreateCall(
-		call, 
-		finalargs, 
+		call,
+		finalargs,
 		isVoid ? "" : "calltmp"
 	);
 	return isVoid ? NULL : val;
@@ -194,7 +194,7 @@ llvm::Value *ShortCircuit(int Op, decafAST *LHS, decafAST *RHS) {
 	throw runtime_error("shortcircuit not implemented");
 }
 
-llvm::Value *BinaryExprAST::Codegen() { 
+llvm::Value *BinaryExprAST::Codegen() {
 	if (shortcircuit && ((Op == T_AND) || (Op == T_OR))) {
 		return ShortCircuit(Op, LHS, RHS);
 	}
@@ -205,29 +205,29 @@ llvm::Value *BinaryExprAST::Codegen() {
 	}
 	// type checking
 	switch (Op) {
-		case T_PLUS: 
-		case T_MINUS: 
-		case T_MULT: 
-		case T_DIV: 
-		case T_LEFTSHIFT: 
-		case T_RIGHTSHIFT: 
-		case T_MOD: 
-		case T_LT: 
-		case T_GT: 
-		case T_LEQ: 
-		case T_GEQ: 
+		case T_PLUS:
+		case T_MINUS:
+		case T_MULT:
+		case T_DIV:
+		case T_LEFTSHIFT:
+		case T_RIGHTSHIFT:
+		case T_MOD:
+		case T_LT:
+		case T_GT:
+		case T_LEQ:
+		case T_GEQ:
 			if (! (L->getType()->isIntegerTy(32) && R->getType()->isIntegerTy(32))) {
 				throw runtime_error("type mismatch in integer expression");
 			}
 			break;
-		case T_AND: 
-		case T_OR: 
+		case T_AND:
+		case T_OR:
 			if (! (L->getType()->isIntegerTy(1) && R->getType()->isIntegerTy(1))) {
 				throw runtime_error("type mismatch in boolean expression");
 			}
 			break;
-		case T_EQ: 
-		case T_NEQ: 
+		case T_EQ:
+		case T_NEQ:
 			if (L->getType() != R->getType()) {
 				throw runtime_error("type mismatch in comparison expression");
 			}
@@ -255,7 +255,7 @@ llvm::Value *BinaryExprAST::Codegen() {
 	}
 }
 
-llvm::Value *UnaryExprAST::Codegen() { 
+llvm::Value *UnaryExprAST::Codegen() {
 	if (NULL == Expr) {
 		throw runtime_error("invalid unary expression");
 	}
@@ -265,22 +265,22 @@ llvm::Value *UnaryExprAST::Codegen() {
 	}
 
 	switch (Op) {
-		case T_MINUS: 
+		case T_MINUS:
 			if (! Val->getType()->isIntegerTy(32)) {
 				throw runtime_error("type mismatch for unary minus");
-			} 
+			}
 			return Builder.CreateNeg(Val, "negtmp");
-		case T_NOT: 
+		case T_NOT:
 			if (! Val->getType()->isIntegerTy(1)) {
 				throw runtime_error("type mismatch for unary negation");
-			} 
+			}
 			return Builder.CreateNot(Val, "nottmp");
-		default: 
+		default:
 			throw runtime_error("operator not found " + string(1, (char)Op));
 	}
 }
 
-llvm::Value *AssignVarAST::Codegen() { 
+llvm::Value *AssignVarAST::Codegen() {
 	if (NULL == Value) {
 		throw runtime_error("invalid assignment");
 	}
@@ -303,15 +303,15 @@ llvm::Value *AssignVarAST::Codegen() {
 	return val;
 }
 
-llvm::Value *AssignArrayLocAST::Codegen() { 
+llvm::Value *AssignArrayLocAST::Codegen() {
 	return NULL;
 }
 
-llvm::Value *ArrayLocExprAST::Codegen() { 
+llvm::Value *ArrayLocExprAST::Codegen() {
 	return NULL;
 }
 
-llvm::Value *BlockAST::Codegen() { 
+llvm::Value *BlockAST::Codegen() {
 	// create a new scope for function args and block for method declaration
 	syms.new_symtbl();
 	llvm::Value *val = NULL;
@@ -321,26 +321,26 @@ llvm::Value *BlockAST::Codegen() {
 	return val;
 }
 
-llvm::Value *MethodBlockAST::Codegen() { 
+llvm::Value *MethodBlockAST::Codegen() {
 	llvm::Value *val = NULL;
 	if (Vars != NULL) val = Vars->Codegen();
 	if (Statements != NULL) val = Statements->Codegen();
 	return val;
 }
 
-llvm::Value *IfStmtAST::Codegen() { 
-	return NULL; 
+llvm::Value *IfStmtAST::Codegen() {
+	return NULL;
 }
 
-llvm::Value *WhileStmtAST::Codegen() { 
-	return NULL; 
+llvm::Value *WhileStmtAST::Codegen() {
+	return NULL;
 }
 
-llvm::Value *ForStmtAST::Codegen() { 
-	return NULL; 
+llvm::Value *ForStmtAST::Codegen() {
+	return NULL;
 }
 
-llvm::Value *ReturnStmtAST::Codegen() { 
+llvm::Value *ReturnStmtAST::Codegen() {
 	llvm::Function *func = Builder.GetInsertBlock()->getParent();
 	if (NULL == func) {
 		throw runtime_error("could not find parent function");
@@ -351,7 +351,7 @@ llvm::Value *ReturnStmtAST::Codegen() {
 		} else {
 			// according to the C spec, return void from non-void function is allowed.
 			// so we silently create a default value for non-void functions
-			// but really it should be an error. 
+			// but really it should be an error.
 			// Q: change it for next time?
 			if (func->getReturnType()->isIntegerTy(32))
 				return Builder.CreateRet(Builder.getInt32(0));
@@ -372,12 +372,12 @@ llvm::Value *ReturnStmtAST::Codegen() {
 	}
 }
 
-llvm::Value *BreakStmtAST::Codegen() { 
-	return NULL; 
+llvm::Value *BreakStmtAST::Codegen() {
+	return NULL;
 }
 
-llvm::Value *ContinueStmtAST::Codegen() { 
-	return NULL; 
+llvm::Value *ContinueStmtAST::Codegen() {
+	return NULL;
 }
 
 llvm::Value *MethodDeclAST::Codegen() {
@@ -410,45 +410,66 @@ llvm::Value *MethodDeclAST::Codegen() {
 			if (func->getReturnType()->isIntegerTy(32))
 				Builder.CreateRet(Builder.getInt32(0));
 			if (func->getReturnType()->isIntegerTy(1))
-				Builder.CreateRet(Builder.getInt1(true));	
+				Builder.CreateRet(Builder.getInt1(true));
 		}
 	} else {
 		throw runtime_error("strangely empty block in method declaration");
 	}
-	
+
 	syms.remove_symtbl();
 	return func;
 }
 
-llvm::Value *AssignGlobalVarAST::Codegen() { 
-	return NULL;
-}
-
-llvm::Value *FieldDecl::Codegen() {
-	llvm::Value *val = NULL;
-	return val;
-}
-
-llvm::Value *FieldDeclListAST::Codegen() { 
-	return NULL;
-}
+llvm::Value *AssignGlobalVarAST::Codegen() {
 
 
- /*// declare a global variable
+
+
+
+/*// declare a global variable
   llvm::GlobalVariable *Foo = new llvm::GlobalVariable(
-    *TheModule, 
-    Builder.getInt32Ty(), 
+    *TheModule,
+    Builder.getInt32Ty(),
     false,  // variable is mutable
-    llvm::GlobalValue::InternalLinkage, 
-    Builder.getInt32(0), 
+    llvm::GlobalValue::InternalLinkage,
+    Builder.getInt32(0),
     "Foo"
   );
 */
 
 
-llvm::Value *ClassAST::Codegen() { 
+
+	return NULL;
+}
+
+llvm::Value *FieldDecl::Codegen() {
 	llvm::Value *val = NULL;
-	TheModule->setModuleIdentifier(llvm::StringRef(Name)); 
+	 GlobalVariable* test = TheModule->getGlobalVariable(Name,true);
+
+
+	 // if Global variable does no exist declare a new one ?
+	 if(NULL == test){
+
+        // declare a global variable
+        return llvm::GlobalVariable *Foo = new llvm::GlobalVariable(*TheModule,Builder.getInt32Ty(),false,llvm::GlobalValue::InternalLinkage,Builder.getInt32(0),Name);
+
+ }
+	return test;
+
+
+}
+
+llvm::Value *FieldDeclListAST::Codegen() {
+	return NULL;
+}
+
+
+
+
+
+llvm::Value *ClassAST::Codegen() {
+	llvm::Value *val = NULL;
+	TheModule->setModuleIdentifier(llvm::StringRef(Name));
 	if (NULL != FieldDeclList) {
 		val = FieldDeclList->Codegen();
 	}
@@ -460,26 +481,26 @@ llvm::Value *ClassAST::Codegen() {
 	}
 	// Q: should we enter the class name into the symbol table?
 	// syms.enter_symtbl(Name,val);
-	return val; 
+	return val;
 }
 
-llvm::Value *ExternAST::Codegen() { 
+llvm::Value *ExternAST::Codegen() {
 	llvm::Type *returnTy = getLLVMType(ReturnType);
 	std::vector<llvm::Type *> args;
 	if (NULL != FunctionArgs) {
 		FunctionArgs->typedArgList(args); // fill up the args vector with types
 	}
 	llvm::Value *Func = llvm::Function::Create(
-		llvm::FunctionType::get(returnTy, args, false), 
-		llvm::Function::ExternalLinkage, 
-		Name, 
+		llvm::FunctionType::get(returnTy, args, false),
+		llvm::Function::ExternalLinkage,
+		Name,
 		TheModule
 	);
 	syms.enter_symtbl(Name, Func);
 	return Func;
 }
 
-llvm::Value *ProgramAST::Codegen() { 
+llvm::Value *ProgramAST::Codegen() {
 	llvm::Value *val = NULL;
 	if (NULL != ExternList) {
 		val = ExternList->Codegen();
@@ -489,5 +510,5 @@ llvm::Value *ProgramAST::Codegen() {
 	} else {
 		throw runtime_error("no class definition in decaf program");
 	}
-	return val; 
+	return val;
 }
