@@ -433,6 +433,19 @@ llvm::Value *FieldDeclListAST::Codegen() {
 	return NULL;
 }
 
+
+ /*// declare a global variable
+  llvm::GlobalVariable *Foo = new llvm::GlobalVariable(
+    *TheModule, 
+    Builder.getInt32Ty(), 
+    false,  // variable is mutable
+    llvm::GlobalValue::InternalLinkage, 
+    Builder.getInt32(0), 
+    "Foo"
+  );
+*/
+
+
 llvm::Value *ClassAST::Codegen() { 
 	llvm::Value *val = NULL;
 	TheModule->setModuleIdentifier(llvm::StringRef(Name)); 
