@@ -443,20 +443,20 @@ llvm::Value *AssignGlobalVarAST::Codegen() {
 }
 
 llvm::Value *FieldDecl::Codegen() {
-
-
 	 // Check prexising globalvar
-	 llvm::GlobalVariable* test = TheModule->getGlobalVariable(Name,true);
+	 llvm::GlobalVariable* test = TheModule->getGlobalVariable(Name,false); // was true
 
 
 	 // if Global variable does no exist declare a new one ?
 	 if(NULL == test){
 
         // declare a global variable
-        return new llvm::GlobalVariable(*TheModule,getLLVMType(Ty),false,llvm::GlobalValue::InternalLinkage,NULL,Name);
+	llvm::GlobalVariable* Foo = new llvm::GlobalVariable(*TheModule,Builder.getInt32Ty(),false,llvm::GlobalValue::CommonLinkage, Builder.getInt32(0),Name); // was InternalLinkage instead of Common
+
+        return Foo ; 
 
  }
-	return NULL;
+	return test;
 
 
 }
