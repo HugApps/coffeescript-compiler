@@ -443,24 +443,28 @@ llvm::Value *AssignGlobalVarAST::Codegen() {
 }
 
 llvm::Value *FieldDecl::Codegen() {
-	llvm::Value *val = NULL;
-	 GlobalVariable* test = TheModule->getGlobalVariable(Name,true);
+
+
+	 // Check prexising globalvar
+	 llvm::GlobalVariable* test = TheModule->getGlobalVariable(Name,true);
 
 
 	 // if Global variable does no exist declare a new one ?
 	 if(NULL == test){
 
         // declare a global variable
-        return llvm::GlobalVariable *Foo = new llvm::GlobalVariable(*TheModule,Builder.getInt32Ty(),false,llvm::GlobalValue::InternalLinkage,Builder.getInt32(0),Name);
+        return new llvm::GlobalVariable(*TheModule,getLLVMType(Ty),false,llvm::GlobalValue::InternalLinkage,NULL,Name);
 
  }
-	return test;
+	return NULL;
 
 
 }
 
 llvm::Value *FieldDeclListAST::Codegen() {
-	return NULL;
+
+    return listCodegen<decafAST *>(arglist);
+	//return NULL;
 }
 
 
