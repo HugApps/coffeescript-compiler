@@ -444,14 +444,14 @@ llvm::Value *AssignGlobalVarAST::Codegen() {
 
 llvm::Value *FieldDecl::Codegen() {
 	 // Check prexising globalvar
-	 llvm::GlobalVariable* test = TheModule->getGlobalVariable(Name,false); // was true
+	 llvm::GlobalVariable* test = TheModule->getGlobalVariable(Name,true); 
 
 
 	 // if Global variable does no exist declare a new one ?
 	 if(NULL == test){
 
         // declare a global variable
-	llvm::GlobalVariable* Foo = new llvm::GlobalVariable(*TheModule,Builder.getInt32Ty(),false,llvm::GlobalValue::CommonLinkage, Builder.getInt32(0),Name); // was InternalLinkage instead of Common
+	llvm::GlobalVariable* Foo = new llvm::GlobalVariable(*TheModule,getLLVMType(Ty),false,llvm::GlobalValue::ExternalLinkage,NULL,Name); 
 
         return Foo ; 
 
