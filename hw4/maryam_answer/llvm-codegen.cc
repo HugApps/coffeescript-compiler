@@ -301,10 +301,45 @@ llvm::Value *AssignVarAST::Codegen() {
 		throw runtime_error("problem creating store " + Name);
 	}
 	return val;
+
+
 }
 
 llvm::Value *AssignArrayLocAST::Codegen() {
-	return NULL;
+// Codegen assign new Array
+// Get array referende at index
+// Assign new value
+   // Get  Array Variable if its already declared
+   llvm::GlobalVariable* test = TheModule->getGlobalVariable(Name,true);
+
+if (NULL != test){
+
+
+  llvm::Value *ArrayLoc = Builder.CreateStructGEP(test, 0, "loc");
+
+  // Load value from Array
+  //int x = Index->Codegen();
+
+  //llvm::Value *I = Builder.getInt32(x); // access Array[Index];
+  //Create Index
+  llvm::Value *ArrayIndex = Builder.CreateGEP(ArrayLoc, Index->Codegen(), "loc");
+  //Use ArrayIndex to store new value;
+  llvm::Value *ArrayStore = Builder.CreateStore(Value->Codegen(), ArrayIndex);
+  return ArrayStore;
+
+}
+else{
+
+    throw runtime_error("Array not declared");
+    return NULL;
+
+
+}
+
+
+
+
+
 }
 
 llvm::Value *ArrayLocExprAST::Codegen() {
@@ -421,7 +456,27 @@ llvm::Value *MethodDeclAST::Codegen() {
 }
 
 llvm::Value *AssignGlobalVarAST::Codegen() {
-
+	/*if (NULL == Value) {
+		throw runtime_error("invalid assignment");
+	}
+	llvm::GlobalVariable*
+rvalue = Value->Codegen();
+	if (rvalue == NULL) {
+		throw runtime_error("no viable r-value found");
+	}
+	const llvm::PointerType *ptrTy = rvalue->getType()->getPointerTo();
+	llvm::AllocaInst *Alloca = (llvm::AllocaInst *)syms.access_symtbl(Name);
+	if (NULL == Alloca) {
+		throw runtime_error("no declaration found for " + Name);
+	}
+	llvm::Value *val = Builder.CreateStore(rvalue, Alloca);
+	if (ptrTy != Alloca->getType()) {
+			throw runtime_error("type mismatch in assignment");
+	}
+	if (NULL == val) {
+		throw runtime_error("problem creating store " + Name);
+	}*/
+	//return val;
 
 
 
@@ -444,16 +499,50 @@ llvm::Value *AssignGlobalVarAST::Codegen() {
 
 llvm::Value *FieldDecl::Codegen() {
 	 // Check prexising globalvar
-	 llvm::GlobalVariable* test = TheModule->getGlobalVariable(Name,true); 
-
+	 llvm::GlobalVariable* test = TheModule->getGlobalVariable(Name,true);
+     llvm::Type*  globaltype = getLLVMType(Ty);
 
 	 // if Global variable does no exist declare a new one ?
 	 if(NULL == test){
 
-        // declare a global variable
-	llvm::GlobalVariable* Foo = new llvm::GlobalVariable(*TheModule,getLLVMType(Ty),false,llvm::GlobalValue::ExternalLinkage,NULL,Name); 
+	 // Check if decl is for array type
 
-        return Foo ; 
+	 if(Size == -1 ||Size==0){
+	 // if Size is -1, declare a simple global variable
+	 llvm::GlobalVariable* Foo = new llvm::GlobalVariable(*TheModule,globaltype,false,llvm::GlobalValue::InternalLinkage,getZeroInit(Ty),Name);
+
+        return Foo ;
+
+
+
+	 }else{
+	 // Declare new Global
+
+          // array size = 10
+    llvm::ArrayType *arrayi32 = llvm::ArrayType::get(globaltype, Size);
+  // zeroinitalizer: initialize array to all zeroes
+    llvm::Constant *zeroInit = llvm::Constant::getNullValue(arrayi32);
+  // declare a global variable
+    llvm::GlobalVariable *Arra = new llvm::GlobalVariable(*TheModule, arrayi32, false, llvm::GlobalValue::ExternalLinkage, zeroInit, Name);
+	 // Declare a new array of Size
+	  //llvm::Value *ArrayLoc = Builder.CreateStructGEP(Arra, 0, "arrayloc");
+
+
+	 return Arra;
+
+
+
+	 }
+
+
+
+
+        // declare a global variable
+
+
+
+
+
 
  }
 	return test;
