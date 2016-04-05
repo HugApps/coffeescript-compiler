@@ -343,7 +343,7 @@ else{
 }
 
 llvm::Value *ArrayLocExprAST::Codegen() {
-	return NULL;
+	//codegen for array value retrieval 
 }
 
 llvm::Value *BlockAST::Codegen() {
@@ -501,13 +501,15 @@ llvm::Value *FieldDecl::Codegen() {
 	 // Check prexising globalvar
 	 llvm::GlobalVariable* test = TheModule->getGlobalVariable(Name,true);
      llvm::Type*  globaltype = getLLVMType(Ty);
-
+         if(Size == 0){
+		throw runtime_error("cannot declare array of size 0");	
+	}
 	 // if Global variable does no exist declare a new one ?
 	 if(NULL == test){
 
 	 // Check if decl is for array type
-
-	 if(Size == -1 ||Size==0){
+	
+	 if(Size == -1){//move this outside NULL = test scope
 	 // if Size is -1, declare a simple global variable
 	 llvm::GlobalVariable* Foo = new llvm::GlobalVariable(*TheModule,globaltype,false,llvm::GlobalValue::InternalLinkage,getZeroInit(Ty),Name);
 
