@@ -343,7 +343,20 @@ else{
 }
 
 llvm::Value *ArrayLocExprAST::Codegen() {
-	//codegen for array value retrieval 
+	//codegen for array value retrieval
+	llvm::GlobalVariable *Foo = TheModule->getGlobalVariable(Name,true);
+        llvm::Value *ArrayLoc = Builder.CreateStructGEP(Foo, 0, "arrayloc");
+	llvm::Value *Index = Builder.getInt32(9);
+	llvm::Value *AIndex = Builder.CreateGEP(ArrayLoc, Index, "Arrayindex");
+	
+llvm::Value *Indexvalue = Builder.CreateLoad(AIndex, "loadtmp");
+
+        return Indexvalue;
+
+
+
+
+ 
 }
 
 llvm::Value *BlockAST::Codegen() {
