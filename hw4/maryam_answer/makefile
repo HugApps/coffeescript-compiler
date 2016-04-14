@@ -10,7 +10,7 @@ targets=
 #llvmcpp=sexpr2-codegen expr-codegen
 #llvmfiles=rec_add
 #llvmcpp=decaf-sym
-llvmcpp=expr-codegen
+llvmcpp=decaf-codegen
 
 all: $(targets) $(cpptargets) $(llvmcpp) $(llvmfiles)
 

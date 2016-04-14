@@ -79,6 +79,7 @@ program: extern_list decafclass
 		}
         try {
             prog->Codegen();
+            //TheModule->dump();
         } 
         catch (std::runtime_error &e) {
             cout << "semantic error: " << e.what() << endl;

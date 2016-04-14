@@ -377,14 +377,95 @@ llvm::Value *MethodBlockAST::Codegen() {
 }
 
 llvm::Value *IfStmtAST::Codegen() {
+	llvm::Function *func = Builder.GetInsertBlock()->getParent();
+
+	llvm::BasicBlock* entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "ifstart", func);
+	llvm::BasicBlock* cond_true = llvm::BasicBlock::Create(llvm::getGlobalContext(), "iftrue", func);
+	llvm::BasicBlock* ret = llvm::BasicBlock::Create(llvm::getGlobalContext(), "end", func);
+
+	Builder.CreateBr(entry);
+	Builder.SetInsertPoint(entry);
+
+	if(ElseBlock)
+	{
+		llvm::BasicBlock* cond_false = llvm::BasicBlock::Create(llvm::getGlobalContext(), "iffalse", func);
+		Builder.CreateCondBr(Cond->Codegen(), cond_true, cond_false);
+		Builder.SetInsertPoint(cond_false);
+		ElseBlock->Codegen();
+		Builder.CreateBr(ret);
+	}
+	else
+	{
+		Builder.CreateCondBr(Cond->Codegen(), cond_true, ret);
+	}
+	
+	Builder.SetInsertPoint(cond_true);
+	IfTrueBlock->Codegen();
+	Builder.CreateBr(ret);
+
+	Builder.SetInsertPoint(ret);
+
 	return NULL;
 }
 
 llvm::Value *WhileStmtAST::Codegen() {
+	llvm::Function *func = Builder.GetInsertBlock()->getParent();
+
+	syms.new_symtbl();
+
+	llvm::BasicBlock* loop = llvm::BasicBlock::Create(llvm::getGlobalContext(), "loop", func);
+	llvm::BasicBlock* body = llvm::BasicBlock::Create(llvm::getGlobalContext(), "body", func);
+	llvm::BasicBlock* end = llvm::BasicBlock::Create(llvm::getGlobalContext(), "end", func);
+
+	syms.enter_symtbl("loop", loop);
+	syms.enter_symtbl("end", end);
+
+	Builder.CreateBr(loop);
+
+	Builder.SetInsertPoint(loop);
+	Builder.CreateCondBr(Cond->Codegen(), body, end);
+
+	Builder.SetInsertPoint(body);
+	Body->Codegen();
+	Builder.CreateBr(loop);
+
+	syms.remove_symtbl();
+
+	Builder.SetInsertPoint(end);
 	return NULL;
 }
 
 llvm::Value *ForStmtAST::Codegen() {
+	llvm::Function *func = Builder.GetInsertBlock()->getParent();
+
+	syms.new_symtbl();
+
+	InitList->Codegen();
+
+	llvm::BasicBlock* loop = llvm::BasicBlock::Create(llvm::getGlobalContext(), "loop", func);
+	llvm::BasicBlock* body = llvm::BasicBlock::Create(llvm::getGlobalContext(), "body", func);
+	llvm::BasicBlock* next = llvm::BasicBlock::Create(llvm::getGlobalContext(), "next", func);
+	llvm::BasicBlock* end = llvm::BasicBlock::Create(llvm::getGlobalContext(), "end", func);
+
+	syms.enter_symtbl("loop", next);
+	syms.enter_symtbl("end", end);
+
+	Builder.CreateBr(loop);
+
+	Builder.SetInsertPoint(loop);
+	Builder.CreateCondBr(Cond->Codegen(), body, end);
+
+	Builder.SetInsertPoint(body);
+	Body->Codegen();
+	Builder.CreateBr(next);
+
+	Builder.SetInsertPoint(next);
+	LoopEndList->Codegen();
+	Builder.CreateBr(loop);
+
+	syms.remove_symtbl();
+
+	Builder.SetInsertPoint(end);
 	return NULL;
 }
 
@@ -421,10 +502,14 @@ llvm::Value *ReturnStmtAST::Codegen() {
 }
 
 llvm::Value *BreakStmtAST::Codegen() {
+	llvm::BasicBlock* end = (llvm::BasicBlock*) syms.access_symtbl("end");
+	Builder.CreateBr(end);
 	return NULL;
 }
 
 llvm::Value *ContinueStmtAST::Codegen() {
+	llvm::BasicBlock* loop = (llvm::BasicBlock*) syms.access_symtbl("loop");
+	Builder.CreateBr(loop);
 	return NULL;
 }
 

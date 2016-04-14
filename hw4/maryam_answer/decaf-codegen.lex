@@ -1,6 +1,6 @@
 %{
 #include "decafdefs.h"
-#include "expr-codegen.tab.h"
+#include "decaf-codegen.tab.h"
 #include <cstring>
 #include <string>
 #include <sstream>
