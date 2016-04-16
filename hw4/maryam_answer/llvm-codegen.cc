@@ -147,6 +147,11 @@ llvm::Value *BoolExprAST::Codegen() {
 }
 
 llvm::Value *VariableExprAST::Codegen() {
+        llvm::GlobalVariable* exist = TheModule->getGlobalVariable(Name,true);
+
+        if(NULL != exist){
+		return Builder.CreateLoad(exist,Name.c_str());
+        }
 	llvm::Value *V = syms.access_symtbl(Name);
 	if (V == NULL) throw runtime_error("could not find variable: " + Name);
 	return Builder.CreateLoad(V, Name.c_str());
