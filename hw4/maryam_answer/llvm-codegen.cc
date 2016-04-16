@@ -288,6 +288,23 @@ llvm::Value *AssignVarAST::Codegen() {
 	if (rvalue == NULL) {
 		throw runtime_error("no viable r-value found");
 	}
+
+
+
+
+        // Have to check if its global
+
+	llvm::GlobalVariable* exist = TheModule->getGlobalVariable(Name,true);
+
+	if( NULL != exist){
+
+		return Builder.CreateStore(rvalue,exist);}
+
+
+	else{
+
+		
+
 	const llvm::PointerType *ptrTy = rvalue->getType()->getPointerTo();
 	llvm::AllocaInst *Alloca = (llvm::AllocaInst *)syms.access_symtbl(Name);
 	if (NULL == Alloca) {
@@ -302,7 +319,7 @@ llvm::Value *AssignVarAST::Codegen() {
 	}
 	return val;
 
-
+}
 }
 
 llvm::Value *AssignArrayLocAST::Codegen() {
