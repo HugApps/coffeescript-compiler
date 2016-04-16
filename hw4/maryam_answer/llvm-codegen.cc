@@ -554,44 +554,30 @@ llvm::Value *MethodDeclAST::Codegen() {
 }
 
 llvm::Value *AssignGlobalVarAST::Codegen() {
-/*	if (NULL == Value) {
-		throw runtime_error("invalid assignment");
-	}
+// declare a global variable
+//  llvm::GlobalVariable *Foo = new llvm::GlobalVariable(*TheModule,Builder.getInt32Ty(), false,llvm::GlobalValue::InternalLinkage,*Value->Codegen(),"Foo");
+  llvm::GlobalVariable* test = TheModule->getGlobalVariable(Name,true);
+  if(NULL==test){
+	//Has not been declared yet //
+
+	// Get type
+
+	llvm::Type* newtype = getLLVMType(Ty);
+       
+	llvm::GlobalVariable *Foo = new llvm::GlobalVariable(*TheModule,newtype, false,llvm::GlobalValue::InternalLinkage,getZeroInit(Ty),Name);
+        //give it a new value 
+        llvm::Constant* c = dynamic_cast<llvm::Constant*>(Value->Codegen());
+        Foo->setInitializer(c);
+        llvm::AllocaInst* d = defineVariable(newtype,Name);
+	return Foo;} //Builder.CreateStore(Value->Codegen(),Foo,false);}
+
+
+ else{
+        llvm::Constant* c = dynamic_cast<llvm::Constant*>( Value->Codegen()); 
+       // test->setInitializer(c);
+	return Builder.CreateStore(Value->Codegen(),test,false);}
+
 	
-	if (rvalue == NULL) {
-		throw runtime_error("no viable r-value found");
-	}
-	const llvm::PointerType *ptrTy = rvalue->getType()->getPointerTo();
-	llvm::AllocaInst *Alloca = (llvm::AllocaInst *)syms.access_symtbl(Name);
-	if (NULL == Alloca) {
-		throw runtime_error("no declaration found for " + Name);
-	}
-	llvm::Value *val = Builder.CreateStore(rvalue, Alloca);
-	if (ptrTy != Alloca->getType()) {
-			throw runtime_error("type mismatch in assignment");
-	}
-	if (NULL == val) {
-		throw runtime_error("problem creating store " + Name);
-	}*/
-	
-
-
-
-
- /*// declare a global variable
-  llvm::GlobalVariable *Foo = new llvm::GlobalVariable(
-    *TheModule,
-    Builder.getInt32Ty(),
-    false,  // variable is mutable
-    llvm::GlobalValue::InternalLinkage,
-    *Value->Codegen(),
-    "Foo"
-  );
-*/
-
-
-
-	return NULL;
 }
 
 llvm::Value *FieldDecl::Codegen() {
@@ -609,7 +595,7 @@ llvm::Value *FieldDecl::Codegen() {
 	 if(Size == -1){//move this outside NULL = test scope
 	 // if Size is -1, declare a simple global variable
 	 llvm::GlobalVariable* Foo = new llvm::GlobalVariable(*TheModule,globaltype,false,llvm::GlobalValue::InternalLinkage,getZeroInit(Ty),Name);
-
+         defineVariable(globaltype,Name);
         return Foo ;
 
 
