@@ -346,7 +346,7 @@ llvm::Value *ArrayLocExprAST::Codegen() {
 	//codegen for array value retrieval
 	llvm::GlobalVariable *Foo = TheModule->getGlobalVariable(Name,true);
         llvm::Value *ArrayLoc = Builder.CreateStructGEP(Foo, 0, "arrayloc");
-	llvm::Value *Index = Builder.getInt32(9);
+	llvm::Value *Index = Expr->Codegen();
 	llvm::Value *AIndex = Builder.CreateGEP(ArrayLoc, Index, "Arrayindex");
 	
 llvm::Value *Indexvalue = Builder.CreateLoad(AIndex, "loadtmp");
@@ -554,11 +554,10 @@ llvm::Value *MethodDeclAST::Codegen() {
 }
 
 llvm::Value *AssignGlobalVarAST::Codegen() {
-	/*if (NULL == Value) {
+/*	if (NULL == Value) {
 		throw runtime_error("invalid assignment");
 	}
-	llvm::GlobalVariable*
-rvalue = Value->Codegen();
+	
 	if (rvalue == NULL) {
 		throw runtime_error("no viable r-value found");
 	}
@@ -574,18 +573,18 @@ rvalue = Value->Codegen();
 	if (NULL == val) {
 		throw runtime_error("problem creating store " + Name);
 	}*/
-	//return val;
+	
 
 
 
 
-/*// declare a global variable
+ /*// declare a global variable
   llvm::GlobalVariable *Foo = new llvm::GlobalVariable(
     *TheModule,
     Builder.getInt32Ty(),
     false,  // variable is mutable
     llvm::GlobalValue::InternalLinkage,
-    Builder.getInt32(0),
+    *Value->Codegen(),
     "Foo"
   );
 */
